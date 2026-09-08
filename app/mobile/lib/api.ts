@@ -37,6 +37,49 @@ export type MissionOffer = {
   provider?: { id: string; name: string; email: string };
 };
 
+export type Organization = {
+  id: string;
+  ownerId: string;
+  name: string;
+  activity: string;
+  country: string;
+  hasProfessionalCapacity: boolean;
+  verificationStatus: "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED";
+  createdAt: string;
+  capacities?: TransportCapacity[];
+};
+
+export type TransportCapacity = {
+  id: string;
+  organizationId: string;
+  vehicleType: string;
+  weightCapacityKg: number;
+  volumeCapacityM3: number | null;
+  zone: string;
+  availableFrom: string;
+  availableTo: string | null;
+  pricePerUnit: number | null;
+  status: "PUBLISHED" | "PAUSED" | "ARCHIVED";
+  organization?: { id: string; name: string; verificationStatus: string };
+};
+
+export type Contract = {
+  id: string;
+  missionId: string;
+  organizationId: string | null;
+  ownerId: string;
+  counterpartyId: string;
+  type: string;
+  price: number;
+  terms: string | null;
+  status: "DRAFT" | "SENT" | "PARTIALLY_SIGNED" | "FULLY_SIGNED" | "CANCELLED";
+  ownerSignedAt: string | null;
+  counterpartySignedAt: string | null;
+  createdAt: string;
+};
+
+export type OfferWithMission = MissionOffer & { mission: Mission };
+
 // The phone can't reach "localhost" (that would be the phone itself), so
 // this must be the computer's LAN IP while running through Expo Go in dev.
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.20:4000";

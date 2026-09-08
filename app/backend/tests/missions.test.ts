@@ -115,4 +115,31 @@ describe("missions marketplace", () => {
     expect(res.status).toBe(409);
     expect(res.body.error).toBe("MISSION_NOT_OPEN");
   });
+
+  it("requires auth for ?mine=true", async () => {
+    const res = await request(app).get("/api/missions").query({ mine: "true" });
+    expect(res.status).toBe(401);
+  });
+
+  it("lists only the caller's own missions regardless of status when mine=true", async () => {
+    const me = await ownerAgent.get("/api/auth/me");
+    const res = await ownerAgent.get("/api/missions").query({ mine: "true" });
+    expect(res.status).toBe(200);
+    expect(res.body.missions.length).toBeGreaterThan(0);
+    expect(res.body.missions.every((m: { ownerId: string }) => m.ownerId === me.body.user.id)).toBe(true);
+    expect(res.body.missions.some((m: { id: string }) => m.id === missionId)).toBe(true);
+
+    const carrierOwned = await carrierAgent.get("/api/missions").query({ mine: "true" });
+    expect(carrierOwned.body.missions.length).toBe(0);
+  });
+
+  it("lists the offers the carrier submitted, across missions, via /offers/mine", async () => {
+    const res = await carrierAgent.get("/api/missions/offers/mine");
+    expect(res.status).toBe(200);
+    expect(res.body.offers.some((o: { missionId: string }) => o.missionId === missionId)).toBe(true);
+    expect(res.body.offers[0].mission.id).toBe(missionId);
+
+    const ownerHasNoOffers = await ownerAgent.get("/api/missions/offers/mine");
+    expect(ownerHasNoOffers.body.offers.length).toBe(0);
+  });
 });

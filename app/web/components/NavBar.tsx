@@ -17,7 +17,9 @@ export function NavBar() {
         <div className="links">
           <Link href="/">Accueil</Link>
           <Link href="/missions">Missions</Link>
-          <Link href="/publier">Publier une mission</Link>
+          <Link href="/mes-missions">Mes missions</Link>
+          <Link href="/contrats">Contrats</Link>
+          <Link href="/mon-entreprise">Mon entreprise</Link>
           <Link href="/prestataires">Prestataires</Link>
         </div>
         <div className="links" style={{ color: "var(--muted-on-navy)" }}>

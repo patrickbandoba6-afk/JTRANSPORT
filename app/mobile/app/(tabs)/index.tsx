@@ -1,19 +1,32 @@
-import { useCallback, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View, TextInput } from "react-native";
-import { Link, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
+import { ScrollView, StyleSheet, Text, View, TextInput, Pressable } from "react-native";
+import { Link, useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, radius } from "../../lib/theme";
-import { Card, IconBadge, Tag } from "../../components/ui";
+import { Card, IconBadge, Tag, Button } from "../../components/ui";
 import { useAuth } from "../../lib/auth-context";
 import { apiFetch, type Mission } from "../../lib/api";
+import { useRoleContent, QuickActionsGrid, ProfessionnelPanel, TransporteurPanel, DispatcherNotice } from "../../components/RoleHome";
 
-const QUICK_ACTIONS: { icon: keyof typeof Ionicons.glyphMap; title: string; sub: string; href: "/publier" | "/(tabs)/missions" }[] = [
-  { icon: "cube", title: "Publier une mission", sub: "Transportez vos marchandises", href: "/publier" },
-  { icon: "search", title: "Rechercher une mission", sub: "Trouvez des missions compatibles", href: "/(tabs)/missions" },
+// null = module pas encore construit — visible pour respecter la structure
+// du cahier des charges, mais honnêtement marqué "Bientôt".
+const CATEGORIES: { icon: string; label: string; href: "/(tabs)/missions" | "/capacites" | null }[] = [
+  { icon: "🚚", label: "Marchandises", href: "/(tabs)/missions" },
+  { icon: "🚌", label: "Voyageurs", href: null },
+  { icon: "🚢", label: "Maritime", href: null },
+  { icon: "✈️", label: "Aérien", href: null },
+  { icon: "🚆", label: "Ferroviaire", href: null },
+  { icon: "🚗", label: "Véhicules", href: null },
+  { icon: "📦", label: "Colis & palettes", href: "/(tabs)/missions" },
+  { icon: "🛃", label: "Douane", href: null },
+  { icon: "🚛", label: "Capacités", href: "/capacites" },
+  { icon: "🔲", label: "Toutes", href: "/(tabs)/missions" },
 ];
 
 export default function Home() {
   const { user } = useAuth();
+  const { title, actions, role } = useRoleContent();
+  const router = useRouter();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -52,7 +65,7 @@ export default function Home() {
 
         {user && <Text style={styles.greeting}>Bonjour, {user.name.split(" ")[0]} 👋</Text>}
 
-        <Text style={styles.heroTitle}>Votre partenaire logistique mondial</Text>
+        <Text style={styles.heroTitle}>{title}</Text>
         <Text style={styles.heroSub}>Import · Export · Transport · Douane · Marketplace</Text>
 
         <View style={styles.searchBar}>
@@ -61,16 +74,37 @@ export default function Home() {
         </View>
       </View>
 
-      <View style={styles.quickRow}>
-        {QUICK_ACTIONS.map((qa) => (
-          <Link key={qa.title} href={qa.href} asChild>
-            <View style={styles.quickCard}>
-              <IconBadge icon={qa.icon === "cube" ? "📦" : "🔎"} size={40} />
-              <Text style={styles.quickTitle}>{qa.title}</Text>
-              <Text style={styles.quickSub}>{qa.sub}</Text>
+      <QuickActionsGrid actions={actions} />
+
+      {role === "PROFESSIONNEL" && <ProfessionnelPanel />}
+      {role === "TRANSPORTEUR" && <TransporteurPanel />}
+      {role === "DISPATCHER" && <DispatcherNotice />}
+
+      <View style={styles.promo}>
+        <Text style={styles.promoEyebrow}>TRANSPORT INTERNATIONAL</Text>
+        <Text style={styles.promoTitle}>Envoyez vos colis partout dans le monde</Text>
+        <Text style={styles.promoSub}>Par route, par mer, par air… en toute sécurité.</Text>
+        <Button title="Calculer mon envoi →" variant="secondary" onPress={() => router.push("/publier")} />
+      </View>
+
+      <Text style={styles.sectionTitle}>📦 Nos catégories</Text>
+      <View style={styles.categoryGrid}>
+        {CATEGORIES.map((c) =>
+          c.href ? (
+            <Link key={c.label} href={c.href} asChild>
+              <Pressable style={styles.categoryTile}>
+                <IconBadge icon={c.icon} size={36} />
+                <Text style={styles.categoryLabel}>{c.label}</Text>
+              </Pressable>
+            </Link>
+          ) : (
+            <View key={c.label} style={[styles.categoryTile, { opacity: 0.5 }]}>
+              <Text style={styles.soonBadge}>Bientôt</Text>
+              <IconBadge icon={c.icon} size={36} />
+              <Text style={styles.categoryLabel}>{c.label}</Text>
             </View>
-          </Link>
-        ))}
+          ),
+        )}
       </View>
 
       <View style={styles.sectionHeader}>
@@ -135,22 +169,41 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   searchInput: { flex: 1, fontSize: 14, color: colors.ink },
-  quickRow: { flexDirection: "row", gap: 12, paddingHorizontal: 16, marginTop: -18, marginBottom: 20 },
-  quickCard: {
-    flex: 1,
-    backgroundColor: "#fff",
+  promo: {
+    marginHorizontal: 16,
+    marginVertical: 16,
     borderRadius: radius.lg,
-    padding: 16,
+    padding: 22,
+    backgroundColor: colors.blue600,
+  },
+  promoEyebrow: { color: "rgba(255,255,255,0.85)", fontSize: 10, fontWeight: "800", letterSpacing: 0.5, marginBottom: 8 },
+  promoTitle: { color: "#fff", fontSize: 19, fontWeight: "800", marginBottom: 6 },
+  promoSub: { color: "rgba(255,255,255,0.85)", fontSize: 12, marginBottom: 14 },
+  sectionTitle: { fontSize: 18, fontWeight: "800", color: colors.ink, paddingHorizontal: 16, marginBottom: 12, marginTop: 4 },
+  categoryGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, paddingHorizontal: 16, marginBottom: 20 },
+  categoryTile: {
+    width: "30%",
+    backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: colors.border,
-    shadowColor: colors.ink,
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    borderRadius: radius.md,
+    padding: 12,
+    alignItems: "center",
   },
-  quickTitle: { fontWeight: "700", fontSize: 13, marginTop: 10, color: colors.ink },
-  quickSub: { fontSize: 11, color: colors.muted, marginTop: 2 },
+  categoryLabel: { fontSize: 10, fontWeight: "700", color: colors.ink, textAlign: "center", marginTop: 6 },
+  soonBadge: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    backgroundColor: "#fef3c7",
+    color: "#92400e",
+    fontSize: 8,
+    fontWeight: "800",
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    overflow: "hidden",
+  },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -158,7 +211,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 12,
   },
-  sectionTitle: { fontSize: 18, fontWeight: "800", color: colors.ink },
   link: { color: colors.blue600, fontWeight: "700", fontSize: 13 },
   muted: { color: colors.muted, fontSize: 13, paddingHorizontal: 16 },
   missionRoute: { fontSize: 16, fontWeight: "700", color: colors.ink, marginTop: 8 },

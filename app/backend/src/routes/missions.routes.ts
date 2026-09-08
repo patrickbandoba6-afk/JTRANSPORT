@@ -27,6 +27,7 @@ const searchQuerySchema = z.object({
   toCity: z.string().optional(),
   vehicleType: z.string().optional(),
   status: z.string().optional(),
+  mine: z.coerce.boolean().optional(),
 });
 
 async function logEvent(missionId: string, type: string, data?: unknown) {
@@ -45,9 +46,13 @@ missionsRouter.get(
   asyncHandler(async (req, res) => {
     const query = searchQuerySchema.parse(req.query);
 
+    if (query.mine && !req.user) {
+      throw new ApiError(401, "AUTHENTICATION_REQUIRED");
+    }
+
     const missions = await prisma.mission.findMany({
       where: {
-        status: query.status ?? "PUBLISHED",
+        ...(query.mine ? { ownerId: req.user!.id } : { status: query.status ?? "PUBLISHED" }),
         ...(query.fromCity ? { fromCity: { contains: query.fromCity } } : {}),
         ...(query.toCity ? { toCity: { contains: query.toCity } } : {}),
         ...(query.vehicleType ? { vehicleType: query.vehicleType } : {}),
@@ -57,6 +62,22 @@ missionsRouter.get(
     });
 
     res.json({ missions });
+  }),
+);
+
+// Offers the current user has submitted, across every mission — the
+// TRANSPORTEUR-facing "mes offres" view. Registered before "/:id" so
+// "offers" is never swallowed as a mission id.
+missionsRouter.get(
+  "/offers/mine",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const offers = await prisma.missionOffer.findMany({
+      where: { providerId: req.user!.id },
+      include: { mission: true },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json({ offers });
   }),
 );
 

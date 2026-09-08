@@ -35,6 +35,49 @@ export type MissionOffer = {
   provider?: { id: string; name: string; email: string };
 };
 
+export type Organization = {
+  id: string;
+  ownerId: string;
+  name: string;
+  activity: string;
+  country: string;
+  hasProfessionalCapacity: boolean;
+  verificationStatus: "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED";
+  createdAt: string;
+  capacities?: TransportCapacity[];
+};
+
+export type TransportCapacity = {
+  id: string;
+  organizationId: string;
+  vehicleType: string;
+  weightCapacityKg: number;
+  volumeCapacityM3: number | null;
+  zone: string;
+  availableFrom: string;
+  availableTo: string | null;
+  pricePerUnit: number | null;
+  status: "PUBLISHED" | "PAUSED" | "ARCHIVED";
+  organization?: { id: string; name: string; verificationStatus: string };
+};
+
+export type Contract = {
+  id: string;
+  missionId: string;
+  organizationId: string | null;
+  ownerId: string;
+  counterpartyId: string;
+  type: string;
+  price: number;
+  terms: string | null;
+  status: "DRAFT" | "SENT" | "PARTIALLY_SIGNED" | "FULLY_SIGNED" | "CANCELLED";
+  ownerSignedAt: string | null;
+  counterpartySignedAt: string | null;
+  createdAt: string;
+};
+
+export type OfferWithMission = MissionOffer & { mission: Mission };
+
 // Server Components (no browser) call the API directly with this base URL.
 // Client Components should call relative "/api/..." paths so the browser
 // sends the auth cookie — see NEXT_PUBLIC_API_URL usage in apiFetch below.
