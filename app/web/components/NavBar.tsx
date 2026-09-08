@@ -20,10 +20,25 @@ export function NavBar() {
           <Link href="/publier">Publier une mission</Link>
           <Link href="/prestataires">Prestataires</Link>
         </div>
-        <div className="links">
+        <div className="links" style={{ color: "var(--muted-on-navy)" }}>
           {loading ? null : user ? (
             <>
-              <span className="muted">
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, var(--blue-600), var(--blue-400))",
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#fff",
+                  }}
+                >
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
                 {user.name} · {user.role}
               </span>
               <a

@@ -28,8 +28,12 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  missions Mission[]      @relation("MissionOwner")
-  offers   MissionOffer[] @relation("OfferProvider")
+  missions      Mission[]      @relation("MissionOwner")
+  offers        MissionOffer[] @relation("OfferProvider")
+  organizations Organization[] @relation("OrganizationOwner")
+  contractsAsOwner        Contract[] @relation("ContractOwner")
+  contractsAsCounterparty Contract[] @relation("ContractCounterparty")
+  documents               Document[] @relation("DocumentOwner")
 }
 
 model Mission {
@@ -48,8 +52,9 @@ model Mission {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  offers MissionOffer[]
-  events MissionEvent[]
+  offers    MissionOffer[]
+  events    MissionEvent[]
+  contracts Contract[]
 
   @@index([status])
   @@index([fromCity, toCity])
@@ -81,4 +86,131 @@ model MissionEvent {
   createdAt DateTime @default(now())
 
   @@index([missionId])
+}
+
+// A company/professional entity a user creates via "Créer mon entreprise de
+// transport". hasProfessionalCapacity intentionally does NOT unlock any
+// regulated activity on its own — see MODULE_CAPACITE_PROFESSIONNELLE in the
+// cahier des charges: JTransport must never present a qualification as a
+// freely rentable/sellable product. VERIFIED only ever gets set by an
+// administrator review, never by the organization itself.
+model Organization {
+  id                        String   @id @default(cuid())
+  ownerId                   String
+  owner                     User     @relation("OrganizationOwner", fields: [ownerId], references: [id])
+  name                      String
+  activity                  String // MARCHANDISES | VOYAGEURS | COMMISSIONNAIRE | LOGISTIQUE | MARITIME | AERIEN | FERROVIAIRE | AUTRE
+  country                   String
+  hasProfessionalCapacity   Boolean  @default(false)
+  verificationStatus        String   @default("UNVERIFIED") // UNVERIFIED | PENDING | VERIFIED | REJECTED
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  capacities TransportCapacity[]
+  contracts  Contract[]
+
+  @@index([ownerId])
+}
+
+// A capacity an organization publishes to the marketplace ("Mes capacités &
+// offres" / "proposer sa capacité").
+model TransportCapacity {
+  id               String    @id @default(cuid())
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  vehicleType      String
+  weightCapacityKg Float
+  volumeCapacityM3 Float?
+  zone             String
+  availableFrom    DateTime
+  availableTo      DateTime?
+  pricePerUnit     Float?
+  status           String    @default("PUBLISHED") // PUBLISHED | PAUSED | ARCHIVED
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([status])
+  @@index([zone, vehicleType])
+}
+
+// Generated from an accepted mission offer. Signature here is an internal
+// click-to-sign audit trail, NOT a qualified electronic signature — see
+// src/utils/signature.ts and CONTRACTS.md caveat surfaced in the API/UI.
+model Contract {
+  id                   String    @id @default(cuid())
+  missionId            String
+  mission              Mission   @relation(fields: [missionId], references: [id])
+  organizationId       String?
+  organization         Organization? @relation(fields: [organizationId], references: [id])
+  ownerId              String
+  owner                User      @relation("ContractOwner", fields: [ownerId], references: [id])
+  counterpartyId       String
+  counterparty         User      @relation("ContractCounterparty", fields: [counterpartyId], references: [id])
+  type                 String    @default("TRANSPORT") // TRANSPORT | SOUS_TRAITANCE | COMMISSIONNEMENT | MISE_A_DISPOSITION
+  price                Float
+  terms                String? // free-text conditions entered at creation
+  status               String    @default("DRAFT") // DRAFT | SENT | PARTIALLY_SIGNED | FULLY_SIGNED | CANCELLED
+  ownerSignedAt        DateTime?
+  counterpartySignedAt DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  events    ContractEvent[]
+  documents Document[]
+
+  @@index([ownerId])
+  @@index([counterpartyId])
+}
+
+model ContractEvent {
+  id         String   @id @default(cuid())
+  contractId String
+  contract   Contract @relation(fields: [contractId], references: [id])
+  type       String // CREATED | SIGNED_BY_OWNER | SIGNED_BY_COUNTERPARTY | FULLY_SIGNED
+  data       String?
+  createdAt  DateTime @default(now())
+
+  @@index([contractId])
+}
+
+// Private per-dossier document vault (cahier des charges §15). A document
+// always belongs to exactly one "dossier" (a Mission, a Contract, or an
+// Organization) — dossierType/dossierId is a lightweight polymorphic
+// reference kept as plain fields (not a Prisma relation union) so new
+// dossier kinds (Shipment, CustomsCase, ...) can be added later without a
+// schema migration touching this table. Access control is enforced in
+// src/routes/documents.routes.ts, never by trusting the client.
+model Document {
+  id         String   @id @default(cuid())
+  ownerId    String
+  owner      User     @relation("DocumentOwner", fields: [ownerId], references: [id])
+  contractId String? // optional direct relation, kept in sync with dossierId when dossierType = CONTRACT
+  contract   Contract? @relation(fields: [contractId], references: [id])
+  dossierType String // MISSION | CONTRACT | ORGANIZATION
+  dossierId   String
+  type        String // FACTURE | BON_LIVRAISON | POD | CONTRAT | ASSURANCE | DOUANE | AUTRE
+  filename    String
+  mimeType    String
+  sizeBytes   Int
+  storageKey  String // path on private disk storage, never served directly
+  version     Int      @default(1)
+  status      String   @default("ACTIVE") // ACTIVE | ARCHIVED
+  createdAt   DateTime @default(now())
+
+  events DocumentEvent[]
+
+  @@index([dossierType, dossierId])
+}
+
+// Access audit trail — cahier des charges §15/§25: "Stockage privé,
+// contrôle d'accès, URLs temporaires signées et audit".
+model DocumentEvent {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id])
+  userId     String?
+  type       String // UPLOADED | SIGNED_URL_ISSUED | DOWNLOADED | ARCHIVED
+  createdAt  DateTime @default(now())
+
+  @@index([documentId])
 }

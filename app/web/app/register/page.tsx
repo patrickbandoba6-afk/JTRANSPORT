@@ -36,10 +36,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="container">
+    <main className="container auth-wrap">
       <Link href="/">← Accueil</Link>
       <section className="section">
         <h1>Créer un compte</h1>
+        <p className="muted">Choisissez votre profil pour une expérience personnalisée.</p>
         <form className="card form" onSubmit={onSubmit}>
           <input
             className="input"

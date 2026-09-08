@@ -34,10 +34,11 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="container">
+    <main className="container auth-wrap">
       <Link href="/">← Accueil</Link>
       <section className="section">
         <h1>Connexion</h1>
+        <p className="muted">Accédez à vos missions, offres et contrats JTransport.</p>
         <form className="card form" onSubmit={onSubmit}>
           <input
             className="input"

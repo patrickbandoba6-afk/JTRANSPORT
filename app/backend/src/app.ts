@@ -6,6 +6,10 @@ import { attachUser } from "./middleware/auth.js";
 import { errorHandler } from "./middleware/error.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { missionsRouter } from "./routes/missions.routes.js";
+import { organizationsRouter } from "./routes/organizations.routes.js";
+import { capacitiesRouter } from "./routes/capacities.routes.js";
+import { contractsRouter } from "./routes/contracts.routes.js";
+import { documentsRouter } from "./routes/documents.routes.js";
 
 export function createApp() {
   const app = express();
@@ -26,6 +30,10 @@ export function createApp() {
 
   app.use("/api/auth", authRouter);
   app.use("/api/missions", missionsRouter);
+  app.use("/api/organizations", organizationsRouter);
+  app.use("/api/capacities", capacitiesRouter);
+  app.use("/api/contracts", contractsRouter);
+  app.use("/api/documents", documentsRouter);
 
   app.use(errorHandler);
 
