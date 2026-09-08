@@ -1,0 +1,78 @@
+{
+  "module": "billing_quotes",
+  "description": "Configuration initiale des intégrations devis, facturation et facturation électronique JTransport",
+  "source_of_truth": {
+    "dgtip_approved_platforms": "https://www.impots.gouv.fr/je-consulte-la-liste-des-plateformes-agreees",
+    "electronic_invoicing_space": "https://www.impots.gouv.fr/facturation-electronique-et-plateformes-agreees",
+    "electronic_invoicing_directory": "https://www.economie.gouv.fr/entreprises/gerer-son-entreprise-au-quotidien/gerer-sa-comptabilite-et-ses-demarches/quest-ce-que-lannuaire-de-la-facturation-electronique",
+    "chorus_pro": "https://chorus-pro.gouv.fr/",
+    "aife_b2b": "https://aife.economie.gouv.fr/nos-applications/facturation-electronique-b2b/",
+    "peppol_france": "https://www.impots.gouv.fr/rejoindre-le-reseau-peppol"
+  },
+  "providers": [
+    {
+      "id": "dgfip_pa_directory",
+      "name": "DGFiP — Liste des plateformes agréées",
+      "type": "official_registry",
+      "status_source": "official",
+      "dynamic_status": true
+    },
+    {
+      "id": "chorus_pro",
+      "name": "Chorus Pro",
+      "type": "public_invoicing",
+      "official": true,
+      "supports": ["public_sector_invoicing", "invoice_status", "api", "edi"]
+    },
+    {
+      "id": "peppol",
+      "name": "Peppol",
+      "type": "network",
+      "official": true,
+      "supports": ["e_invoicing_network"]
+    },
+    {
+      "id": "sellsy",
+      "name": "Sellsy",
+      "type": "commercial_candidate",
+      "pa_status": "verify_from_dgfip_before_display",
+      "supports": ["quotes", "invoices", "crm", "api"]
+    },
+    {
+      "id": "cegid",
+      "name": "Cegid",
+      "type": "commercial_candidate",
+      "pa_status": "verify_from_dgfip_before_display",
+      "supports": ["billing", "accounting", "api"]
+    },
+    {
+      "id": "sage",
+      "name": "Sage",
+      "type": "commercial_candidate",
+      "pa_status": "verify_from_dgfip_before_display",
+      "supports": ["quotes", "invoices", "accounting", "api"]
+    },
+    {
+      "id": "yooz",
+      "name": "Yooz",
+      "type": "commercial_candidate",
+      "pa_status": "verify_from_dgfip_before_display",
+      "supports": ["e_invoicing", "invoice_processing", "api"]
+    }
+  ],
+  "documents": ["quote", "invoice", "credit_note", "deposit_invoice", "payment_receipt"],
+  "formats": ["PDF", "Factur-X", "UBL", "CII", "XML"],
+  "features": [
+    "quote_to_invoice",
+    "invoice_status",
+    "payment_status",
+    "e_invoicing",
+    "e_reporting",
+    "credit_notes",
+    "reminders",
+    "audit_log",
+    "document_archiving",
+    "webhooks",
+    "idempotency"
+  ]
+}

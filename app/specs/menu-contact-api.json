@@ -1,0 +1,34 @@
+{
+  "home": {
+    "actions": [
+      {"key":"publish-mission","route":"/missions/new","permission":"mission:create"},
+      {"key":"find-provider","route":"/providers","permission":"provider:read"},
+      {"key":"create-transport-company","route":"/company/onboarding","permission":"company:onboarding"},
+      {"key":"my-capacities","route":"/capacities","permission":"capacity:manage"}
+    ],
+    "categories": [
+      "freight-road","passenger","freight-sea","freight-air","freight-rail","vehicle-transport",
+      "parcels-pallets","customs","import-export","logistics-warehousing","transport-capacity","all"
+    ],
+    "services": ["quotes-invoices","contracts-signature","tracking","transport-insurance","disputes"]
+  },
+  "contact": {
+    "companyPublicFields": ["displayName","professionalEmail","professionalPhone","professionalAddress","city","country","hours","services","servedZones","verificationStatus"],
+    "individualDefaultPublicFields": ["displayName"],
+    "individualShareableFields": ["email","phone","address"],
+    "actions": ["message","call","email","request-quote","request-mission"],
+    "contextTypes": ["MISSION","QUOTE","SHIPMENT","CONTRACT","GENERAL"]
+  },
+  "api": [
+    "GET /api/home",
+    "GET /api/search",
+    "GET /api/categories",
+    "GET /api/providers/:id",
+    "GET /api/organizations/:id/contact",
+    "PATCH /api/me/contact-visibility",
+    "POST /api/conversations",
+    "GET /api/conversations",
+    "GET /api/conversations/:id/messages",
+    "POST /api/conversations/:id/messages"
+  ]
+}

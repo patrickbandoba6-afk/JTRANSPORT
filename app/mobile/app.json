@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "JTransport Marketplace",
+    "slug": "jtransport-marketplace",
+    "version": "1.0.0",
+    "scheme": "jtransport",
+    "plugins": ["expo-router"],
+    "experiments": {"typedRoutes": true}
+  }
+}

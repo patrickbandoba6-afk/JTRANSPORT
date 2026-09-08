@@ -1,0 +1,4 @@
+import { View, Text, Pressable } from 'react-native';
+export default function DriverHome() {
+  return <View style={{flex:1,padding:24,gap:18,backgroundColor:'#F5F9FF'}}><Text style={{fontSize:28,fontWeight:'800',color:'#062B66'}}>JTransport Driver</Text><Text style={{fontSize:18}}>Bonjour, votre tournée est prête.</Text><View style={{padding:20,borderRadius:18,backgroundColor:'#fff'}}><Text style={{fontWeight:'700'}}>Tournée #JT-2409</Text><Text>18 colis · 14 arrêts</Text></View><Pressable style={{padding:16,borderRadius:14,backgroundColor:'#0878E8'}}><Text style={{color:'#fff',textAlign:'center',fontWeight:'700'}}>Commencer la tournée</Text></Pressable><Pressable style={{padding:16,borderRadius:14,backgroundColor:'#fff'}}><Text style={{textAlign:'center',fontWeight:'700'}}>Scanner un colis</Text></Pressable></View>;
+}

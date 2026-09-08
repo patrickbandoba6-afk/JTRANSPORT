@@ -1,0 +1,5 @@
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { Link } from "expo-router";
+const missions=[["JT-M001","Paris → Lyon","8 palettes · 2 500 kg","650 €"],["JT-M002","Lille → Bruxelles","25 colis · 420 kg","290 €"],["JT-M003","Marseille → Madrid","12 palettes · 4 800 kg","1 250 €"]];
+export default function Missions(){return <ScrollView contentContainerStyle={s.c}><Link href="/">← Accueil</Link><Text style={s.h1}>🔎 Rechercher une mission</Text>{missions.map(m=><View style={s.card} key={m[0]}><Text style={s.h2}>{m[1]}</Text><Text>{m[2]}</Text><Text style={s.price}>{m[3]}</Text><Link href={`/missions/${m[0]}`}>Faire une offre →</Link></View>)}</ScrollView>}
+const s=StyleSheet.create({c:{padding:24,gap:14,backgroundColor:"#f6f7f9",minHeight:"100%"},h1:{fontSize:28,fontWeight:"800"},h2:{fontSize:18,fontWeight:"700"},card:{backgroundColor:"#fff",padding:18,borderRadius:14,gap:8},price:{fontSize:20,fontWeight:"800"}});
