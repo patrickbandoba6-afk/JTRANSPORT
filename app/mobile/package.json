@@ -10,12 +10,15 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
     "expo": "57.0.21",
     "expo-router": "57.0.20",
+    "expo-secure-store": "~57.0.3",
     "react": "19.2.3",
     "react-native": "0.86.3"
   },
   "devDependencies": {
+    "@types/react": "^19.2.18",
     "typescript": "7.0.2"
   }
 }
