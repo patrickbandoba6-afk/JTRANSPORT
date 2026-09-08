@@ -1,7 +1,11 @@
 // Central place for the string-based "enums" used across the schema
 // (SQLite has no native enum type — see prisma/schema.prisma).
 
-export const ROLES = ["PARTICULIER", "TRANSPORTEUR", "ADMIN"] as const;
+// PROFESSIONNEL and DISPATCHER are accepted at registration (the storyboard's
+// "Quel type de compte" step) even though their dedicated dashboards are
+// later phases — the role exists on the account from day one so nothing
+// needs re-registering once those modules land.
+export const ROLES = ["PARTICULIER", "PROFESSIONNEL", "TRANSPORTEUR", "DISPATCHER", "ADMIN"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const MISSION_STATUSES = [

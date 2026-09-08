@@ -2,6 +2,7 @@ import "./globals.css";
 import type { ReactNode } from "react";
 import { AuthProvider } from "../lib/auth-context";
 import { NavBar } from "../components/NavBar";
+import { AppBootstrap } from "../components/AppBootstrap";
 
 export const metadata = {
   title: "JTransport Marketplace",
@@ -13,8 +14,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="fr">
       <body>
         <AuthProvider>
-          <NavBar />
-          {children}
+          <AppBootstrap>
+            <NavBar />
+            {children}
+          </AppBootstrap>
         </AuthProvider>
       </body>
     </html>

@@ -147,6 +147,79 @@ a { text-decoration: none; color: inherit }
 .auth-wrap h1 { font-size: 26px; margin: 18px 0 4px }
 .auth-wrap .card { margin-top: 18px }
 
+/* Launch flow — splash + onboarding, matching the storyboard's dark screens */
+.launch-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 50% 15%, rgba(47, 123, 245, 0.25), transparent 55%),
+    linear-gradient(160deg, var(--navy-950), var(--navy-900) 55%, var(--navy-800));
+}
+.launch-logo {
+  width: 84px;
+  height: 84px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #e02424, #fff 55%, var(--blue-600) 55%);
+  color: var(--navy-900);
+  margin-bottom: 18px;
+}
+.launch-screen h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: 0.5px }
+.launch-screen p.tagline { color: var(--muted-on-navy); font-size: 13px; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 40px }
+
+.progress-track {
+  width: 220px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--blue-600), var(--blue-400));
+  animation: progress-grow 1.1s ease forwards;
+}
+@keyframes progress-grow { from { width: 0% } to { width: 100% } }
+.launch-screen .progress-label { margin-top: 14px; font-size: 13px; color: var(--muted-on-navy) }
+
+.onboarding-slide { max-width: 380px }
+.onboarding-slide h2 { font-size: 24px; margin: 0 0 10px }
+.onboarding-slide p { color: var(--muted-on-navy); font-size: 15px; line-height: 1.5 }
+.onboarding-dots { display: flex; gap: 6px; margin: 28px 0 22px }
+.onboarding-dots span { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.25) }
+.onboarding-dots span.active { background: var(--blue-400); width: 20px; border-radius: var(--radius-pill) }
+.onboarding-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px }
+.onboarding-skip { background: none; border: 0; color: var(--muted-on-navy); font-size: 14px; cursor: pointer; padding: 8px }
+
+.role-grid { display: grid; gap: 10px; margin: 4px 0 14px }
+.role-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  background: #fff;
+  text-align: left;
+}
+.role-option.selected { border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(47,123,245,0.12) }
+.role-option strong { display: block; font-size: 14px }
+.role-option span.muted { font-size: 12px }
+.role-option .quick-icon { width: 38px; height: 38px; min-width: 38px; font-size: 17px; border-radius: 10px }
+
 .card {
   background: var(--card);
   border: 1px solid var(--border);
