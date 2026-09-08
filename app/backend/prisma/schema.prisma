@@ -1,0 +1,84 @@
+// Dev datasource is SQLite (zero-config, no local Postgres/Docker needed).
+// To go to production: switch provider to "postgresql", point DATABASE_URL
+// at the prod instance, then run `prisma migrate dev` again to generate a
+// fresh Postgres migration (SQLite and Postgres migrations are not
+// interchangeable). No model here uses a SQLite-only feature, so the schema
+// itself needs no changes for the swap.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Roles and statuses are plain strings (not Prisma enums) because the
+// SQLite connector does not support native enums — this keeps the schema
+// portable to Postgres without a migration rewrite. Valid values are
+// enforced at the API boundary with zod (see src/utils/validation.ts).
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         String // PARTICULIER | TRANSPORTEUR | ADMIN
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  missions Mission[]      @relation("MissionOwner")
+  offers   MissionOffer[] @relation("OfferProvider")
+}
+
+model Mission {
+  id          String   @id @default(cuid())
+  ownerId     String
+  owner       User     @relation("MissionOwner", fields: [ownerId], references: [id])
+  fromCity    String
+  toCity      String
+  date        DateTime
+  cargo       String
+  weightKg    Float
+  vehicleType String
+  budget      Float
+  recurring   Boolean  @default(false)
+  status      String   @default("PUBLISHED") // PUBLISHED | ATTRIBUTED | CONFIRMED | CANCELLED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  offers MissionOffer[]
+  events MissionEvent[]
+
+  @@index([status])
+  @@index([fromCity, toCity])
+}
+
+model MissionOffer {
+  id         String   @id @default(cuid())
+  missionId  String
+  mission    Mission  @relation(fields: [missionId], references: [id])
+  providerId String
+  provider   User     @relation("OfferProvider", fields: [providerId], references: [id])
+  price      Float
+  message    String?
+  status     String   @default("PENDING") // PENDING | ACCEPTED | REJECTED | WITHDRAWN
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([missionId, providerId])
+}
+
+// Lightweight per-mission audit trail so status changes stay historized,
+// per the "les statuts doivent être historisés" rule in backend/README.md.
+model MissionEvent {
+  id        String   @id @default(cuid())
+  missionId String
+  mission   Mission  @relation(fields: [missionId], references: [id])
+  type      String // STATUS_CHANGE | OFFER_RECEIVED | OFFER_ACCEPTED | OFFER_REJECTED
+  data      String? // JSON-stringified payload
+  createdAt DateTime @default(now())
+
+  @@index([missionId])
+}

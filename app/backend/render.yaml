@@ -1,0 +1,24 @@
+# Render blueprint for the JTransport API.
+# Before the first deploy: switch prisma/schema.prisma's datasource provider
+# from "sqlite" to "postgresql" and run `prisma migrate dev` locally against
+# a Postgres instance to generate the initial migration — sqlite migrations
+# cannot be replayed against Postgres. Then attach a Render Postgres
+# instance (or Neon/Supabase) and set DATABASE_URL below to its connection
+# string.
+services:
+  - type: web
+    name: jtransport-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: DATABASE_URL
+        sync: false

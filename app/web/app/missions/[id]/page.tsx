@@ -1,21 +1,47 @@
 import Link from "next/link";
-import { missions } from "../../../lib/data";
+import { API_URL, type Mission } from "../../../lib/api";
+import { MissionActions } from "../../../components/MissionActions";
 
-export default async function MissionDetail({ params }: { params: Promise<{id:string}> }) {
-  const {id}=await params;
-  const m=missions.find(x=>x.id===id) ?? missions[0];
-  return <main className="container">
-    <Link href="/missions">← Missions</Link>
-    <section className="section card">
-      <span className="tag">{m.vehicle}</span><h1>{m.from} → {m.to}</h1>
-      <p className="muted">Mission {m.id} · {m.date}</p>
-      <p><b>Marchandise :</b> {m.cargo}</p><p><b>Poids :</b> {m.weight}</p>
-      <p><b>Budget indicatif :</b> <span className="price">{m.budget} €</span></p>
-      <div className="actions"><button className="btn">Faire une offre</button><button className="btn secondary">💬 Contacter</button></div>
-    </section>
-    <section className="section card">
-      <h2>Faire une offre</h2>
-      <div className="form"><input className="input" placeholder="Votre prix (€)" /><input className="input" placeholder="Délai proposé" /><textarea className="textarea" placeholder="Conditions ou message au client"></textarea><button className="btn">Envoyer l'offre</button></div>
-    </section>
-  </main>
+async function getMission(id: string): Promise<Mission | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/missions/${id}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.mission;
+  } catch {
+    return null;
+  }
+}
+
+export default async function MissionDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const mission = await getMission(id);
+
+  if (!mission) {
+    return (
+      <main className="container">
+        <Link href="/missions">← Missions</Link>
+        <section className="section card">
+          <p className="muted">Cette mission n'existe pas ou n'est plus disponible.</p>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="container">
+      <Link href="/missions">← Missions</Link>
+      <section className="section card">
+        <span className="tag">{mission.vehicleType}</span>
+        <span className="tag">{mission.status}</span>
+        <h1>{mission.fromCity} → {mission.toCity}</h1>
+        <p className="muted">Mission {mission.id} · {new Date(mission.date).toLocaleDateString("fr-FR")}</p>
+        <p><b>Marchandise :</b> {mission.cargo}</p>
+        <p><b>Poids :</b> {mission.weightKg} kg</p>
+        <p><b>Budget indicatif :</b> <span className="price">{mission.budget} €</span></p>
+      </section>
+
+      <MissionActions mission={mission} />
+    </main>
+  );
 }

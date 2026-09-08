@@ -1,0 +1,58 @@
+import { PrismaClient } from "@prisma/client";
+import { hashPassword } from "../src/utils/password.js";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  const password = await hashPassword("password123");
+
+  const owner = await prisma.user.upsert({
+    where: { email: "client@jtransport.test" },
+    update: {},
+    create: {
+      email: "client@jtransport.test",
+      passwordHash: password,
+      name: "Amina Client",
+      role: "PARTICULIER",
+    },
+  });
+
+  const carrier = await prisma.user.upsert({
+    where: { email: "transporteur@jtransport.test" },
+    update: {},
+    create: {
+      email: "transporteur@jtransport.test",
+      passwordHash: password,
+      name: "Transports Diallo",
+      role: "TRANSPORTEUR",
+    },
+  });
+
+  await prisma.mission.upsert({
+    where: { id: "seed-mission-1" },
+    update: {},
+    create: {
+      id: "seed-mission-1",
+      ownerId: owner.id,
+      fromCity: "Paris",
+      toCity: "Lyon",
+      date: new Date("2026-09-15"),
+      cargo: "8 palettes",
+      weightKg: 2500,
+      vehicleType: "Camion",
+      budget: 650,
+      recurring: false,
+    },
+  });
+
+  console.log("Seed complete:", { owner: owner.email, carrier: carrier.email });
+}
+
+main()
+  .catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
