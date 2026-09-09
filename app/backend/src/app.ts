@@ -10,6 +10,8 @@ import { organizationsRouter } from "./routes/organizations.routes.js";
 import { capacitiesRouter } from "./routes/capacities.routes.js";
 import { contractsRouter } from "./routes/contracts.routes.js";
 import { documentsRouter } from "./routes/documents.routes.js";
+import { shipmentsRouter } from "./routes/shipments.routes.js";
+import { containersRouter } from "./routes/containers.routes.js";
 
 export function createApp() {
   const app = express();
@@ -34,6 +36,8 @@ export function createApp() {
   app.use("/api/capacities", capacitiesRouter);
   app.use("/api/contracts", contractsRouter);
   app.use("/api/documents", documentsRouter);
+  app.use("/api/shipments", shipmentsRouter);
+  app.use("/api/containers", containersRouter);
 
   app.use(errorHandler);
 

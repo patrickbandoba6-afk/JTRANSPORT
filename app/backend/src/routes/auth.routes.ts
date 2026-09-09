@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "../db.js";
 import { hashPassword, verifyPassword } from "../utils/password.js";
 import { signAuthToken } from "../utils/jwt.js";
-import { ROLES } from "../domain.js";
+import { SELF_REGISTERABLE_ROLES, type Role } from "../domain.js";
 import { asyncHandler, ApiError } from "../middleware/error.js";
 import { requireAuth, COOKIE_NAME } from "../middleware/auth.js";
 import { env } from "../env.js";
@@ -15,7 +15,7 @@ const registerSchema = z.object({
   password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
   name: z.string().min(1),
   phone: z.string().optional(),
-  role: z.enum(ROLES),
+  role: z.enum(SELF_REGISTERABLE_ROLES),
 });
 
 const loginSchema = z.object({
@@ -78,7 +78,7 @@ authRouter.post(
       throw new ApiError(401, "INVALID_CREDENTIALS", "E-mail ou mot de passe incorrect.");
     }
 
-    const token = signAuthToken({ sub: user.id, role: user.role as (typeof ROLES)[number] });
+    const token = signAuthToken({ sub: user.id, role: user.role as Role });
     setAuthCookie(res, token);
     res.json({ user: publicUser(user), token });
   }),

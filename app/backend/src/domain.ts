@@ -8,6 +8,11 @@
 export const ROLES = ["PARTICULIER", "PROFESSIONNEL", "TRANSPORTEUR", "DISPATCHER", "ADMIN"] as const;
 export type Role = (typeof ROLES)[number];
 
+// Self-registration must never allow choosing ADMIN — that role is granted
+// out-of-band (seed script, or a future admin-invite flow), never picked
+// from a public form.
+export const SELF_REGISTERABLE_ROLES = ROLES.filter((r) => r !== "ADMIN") as Exclude<Role, "ADMIN">[];
+
 export const MISSION_STATUSES = [
   "PUBLISHED",
   "ATTRIBUTED",
@@ -56,7 +61,7 @@ export const CONTRACT_STATUSES = [
 ] as const;
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
 
-export const DOSSIER_TYPES = ["MISSION", "CONTRACT", "ORGANIZATION"] as const;
+export const DOSSIER_TYPES = ["MISSION", "CONTRACT", "ORGANIZATION", "SHIPMENT"] as const;
 export type DossierType = (typeof DOSSIER_TYPES)[number];
 
 export const DOCUMENT_TYPES = [
@@ -77,3 +82,46 @@ export const ALLOWED_DOCUMENT_MIME_TYPES = [
   "image/png",
   "image/webp",
 ] as const;
+
+export const SHIPMENT_STATUSES = [
+  "CREATED",
+  "COLLECTED",
+  "AT_WAREHOUSE",
+  "GROUPED",
+  "IN_CONTAINER",
+  "LOADED",
+  "DEPARTED",
+  "IN_TRANSIT",
+  "ARRIVED",
+  "CUSTOMS",
+  "CUSTOMS_CLEARED",
+  "OUT_FOR_DELIVERY",
+  "DELIVERED",
+  "INCIDENT",
+  "CANCELLED",
+] as const;
+export type ShipmentStatus = (typeof SHIPMENT_STATUSES)[number];
+
+export const CONTAINER_TYPES = ["FCL_20", "FCL_40", "FCL_40HC", "LCL"] as const;
+export type ContainerType = (typeof CONTAINER_TYPES)[number];
+
+export const CONTAINER_STATUSES = [
+  "PREPARING",
+  "LOADED",
+  "DEPARTED",
+  "IN_TRANSIT",
+  "ARRIVED",
+  "CUSTOMS",
+  "RELEASED",
+  "DELIVERED",
+] as const;
+export type ContainerStatus = (typeof CONTAINER_STATUSES)[number];
+
+export const CUSTOMS_STATUSES = [
+  "DOCUMENTS_PENDING",
+  "SUBMITTED",
+  "UNDER_REVIEW",
+  "CLEARED",
+  "BLOCKED",
+] as const;
+export type CustomsStatus = (typeof CUSTOMS_STATUSES)[number];

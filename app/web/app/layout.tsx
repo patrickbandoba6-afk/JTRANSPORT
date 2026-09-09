@@ -5,7 +5,7 @@ import { NavBar } from "../components/NavBar";
 import { AppBootstrap } from "../components/AppBootstrap";
 
 export const metadata = {
-  title: "JTransport Marketplace",
+  title: "JTRANSPORT",
   description: "Marketplace de transport et de prestations logistiques"
 };
 

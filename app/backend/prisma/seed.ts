@@ -28,6 +28,17 @@ async function main() {
     },
   });
 
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@jtransport.test" },
+    update: {},
+    create: {
+      email: "admin@jtransport.test",
+      passwordHash: password,
+      name: "Admin JTransport",
+      role: "ADMIN",
+    },
+  });
+
   await prisma.mission.upsert({
     where: { id: "seed-mission-1" },
     update: {},
@@ -45,7 +56,7 @@ async function main() {
     },
   });
 
-  console.log("Seed complete:", { owner: owner.email, carrier: carrier.email });
+  console.log("Seed complete:", { owner: owner.email, carrier: carrier.email, admin: admin.email });
 }
 
 main()

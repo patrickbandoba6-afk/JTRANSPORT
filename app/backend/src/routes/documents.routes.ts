@@ -65,6 +65,13 @@ async function assertDossierAccess(dossierType: DossierType, dossierId: string, 
     if (organization.ownerId === userId) return;
     throw new ApiError(403, "FORBIDDEN");
   }
+
+  if (dossierType === "SHIPMENT") {
+    const shipment = await prisma.shipment.findUnique({ where: { id: dossierId } });
+    if (!shipment) throw new ApiError(404, "DOSSIER_NOT_FOUND");
+    if (shipment.ownerId === userId) return;
+    throw new ApiError(403, "FORBIDDEN");
+  }
 }
 
 async function logEvent(documentId: string, type: string, userId?: string) {

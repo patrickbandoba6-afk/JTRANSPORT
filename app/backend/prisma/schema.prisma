@@ -34,6 +34,7 @@ model User {
   contractsAsOwner        Contract[] @relation("ContractOwner")
   contractsAsCounterparty Contract[] @relation("ContractCounterparty")
   documents               Document[] @relation("DocumentOwner")
+  shipments               Shipment[] @relation("ShipmentOwner")
 }
 
 model Mission {
@@ -213,4 +214,105 @@ model DocumentEvent {
   createdAt  DateTime @default(now())
 
   @@index([documentId])
+}
+
+// International shipment: cahier des charges §9 end-to-end journey —
+// création → collecte → groupage → conteneur → douane → livraison. Events
+// are only ever written by an operator (ADMIN for now, until a real
+// dispatcher/warehouse role is wired in) or a real integration adapter —
+// never fabricated, per "ne jamais inventer une position/ETA/événement".
+model Shipment {
+  id                String   @id @default(cuid())
+  ownerId           String
+  owner             User     @relation("ShipmentOwner", fields: [ownerId], references: [id])
+  originCity        String
+  originCountry     String
+  destinationCity   String
+  destinationCountry String
+  recipientName     String
+  recipientPhone    String?
+  recipientEmail    String?
+  recipientAddress  String
+  status            String   @default("CREATED")
+  // CREATED | COLLECTED | AT_WAREHOUSE | GROUPED | IN_CONTAINER | LOADED |
+  // DEPARTED | IN_TRANSIT | ARRIVED | CUSTOMS | CUSTOMS_CLEARED |
+  // OUT_FOR_DELIVERY | DELIVERED | INCIDENT | CANCELLED
+  containerId       String?
+  container         Container? @relation(fields: [containerId], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  parcels     Parcel[]
+  events      TrackingEvent[]
+  customsCase CustomsCase?
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([containerId])
+}
+
+model Parcel {
+  id             String  @id @default(cuid())
+  shipmentId     String
+  shipment       Shipment @relation(fields: [shipmentId], references: [id])
+  description    String
+  weightKg       Float
+  lengthCm       Float?
+  widthCm        Float?
+  heightCm       Float?
+  declaredValue  Float?
+
+  @@index([shipmentId])
+}
+
+// FCL/LCL container carrying one or more shipments (cahier des charges §10).
+model Container {
+  id              String    @id @default(cuid())
+  containerNumber String    @unique
+  type            String // FCL_20 | FCL_40 | FCL_40HC | LCL
+  sealNumber      String?
+  originPort      String
+  destinationPort String
+  shippingLine    String?
+  vesselName      String?
+  etd             DateTime?
+  eta             DateTime?
+  status          String    @default("PREPARING") // PREPARING | LOADED | DEPARTED | IN_TRANSIT | ARRIVED | CUSTOMS | RELEASED | DELIVERED
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  shipments Shipment[]
+
+  @@index([status])
+}
+
+// Real-only tracking timeline — never a guessed position or ETA.
+model TrackingEvent {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id])
+  type       String // mirrors Shipment.status values, e.g. COLLECTED, DEPARTED, ARRIVED, DELIVERED, INCIDENT
+  location   String?
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([shipmentId])
+}
+
+// Digital customs dossier (cahier des charges §13). Amounts here are
+// estimates until a real customs authority/broker integration is wired in
+// — never presented as an official duty amount (see §31 quality rules).
+model CustomsCase {
+  id             String   @id @default(cuid())
+  shipmentId     String   @unique
+  shipment       Shipment @relation(fields: [shipmentId], references: [id])
+  status         String   @default("DOCUMENTS_PENDING") // DOCUMENTS_PENDING | SUBMITTED | UNDER_REVIEW | CLEARED | BLOCKED
+  declaredValue  Float?
+  hsCode         String?
+  incoterm       String?
+  estimatedFees  Float?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([shipmentId])
 }
