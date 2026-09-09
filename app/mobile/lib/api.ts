@@ -154,6 +154,49 @@ export type Invoice = {
   lines?: InvoiceLine[];
 };
 
+export type ConversationSummary = {
+  id: string;
+  subject: string | null;
+  missionId: string | null;
+  updatedAt: string;
+  participants: { userId: string; user: { id: string; name: string; role: Role } }[];
+  messages: { id: string; body: string; createdAt: string; senderId: string }[];
+};
+
+export type ChatMessage = {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  body: string;
+  createdAt: string;
+  sender?: { id: string; name: string };
+};
+
+export type RoundStop = {
+  id: string;
+  roundId: string;
+  position: number;
+  label: string;
+  address: string;
+  parcelCode: string | null;
+  recipient: string | null;
+  status: "PENDING" | "IN_PROGRESS" | "DELIVERED" | "FAILED";
+  podNote: string | null;
+  failureReason: string | null;
+  completedAt: string | null;
+};
+
+export type DeliveryRound = {
+  id: string;
+  reference: string;
+  dispatcherId: string;
+  driverId: string | null;
+  date: string;
+  status: "PLANNED" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  stops?: RoundStop[];
+  driver?: { id: string; name: string } | null;
+};
+
 export type DocumentRecord = {
   id: string;
   dossierType: string;

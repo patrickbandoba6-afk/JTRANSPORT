@@ -15,6 +15,7 @@ import { containersRouter } from "./routes/containers.routes.js";
 import { invoicesRouter } from "./routes/invoices.routes.js";
 import { conversationsRouter } from "./routes/conversations.routes.js";
 import { roundsRouter } from "./routes/rounds.routes.js";
+import { parcelsRouter } from "./routes/parcels.routes.js";
 
 export function createApp() {
   const app = express();
@@ -44,6 +45,7 @@ export function createApp() {
   app.use("/api/invoices", invoicesRouter);
   app.use("/api/conversations", conversationsRouter);
   app.use("/api/rounds", roundsRouter);
+  app.use("/api/parcels", parcelsRouter);
 
   app.use(errorHandler);
 

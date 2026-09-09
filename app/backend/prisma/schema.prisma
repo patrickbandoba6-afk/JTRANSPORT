@@ -41,6 +41,8 @@ model User {
   messagesSent            Message[]  @relation("MessageSender")
   roundsAsDriver          DeliveryRound[] @relation("RoundDriver")
   roundsCreated           DeliveryRound[] @relation("RoundDispatcher")
+  organizationMemberships OrganizationMember[] @relation("OrganizationMemberUser")
+  incidentsOpened         Incident[] @relation("IncidentOpener")
 }
 
 model Mission {
@@ -116,6 +118,9 @@ model Organization {
 
   capacities TransportCapacity[]
   contracts  Contract[]
+  members    OrganizationMember[]
+  parcels    Parcel[]             @relation("ParcelOwnerOrganization")
+  roundsAsCarrier DeliveryRound[] @relation("RoundCarrierOrganization")
 
   @@index([ownerId])
 }
@@ -272,18 +277,93 @@ model Shipment {
   @@index([containerId])
 }
 
+// A parcel is the central traceable object. It can come from a customer
+// shipment (shipmentId) or from a company batch (organizationId). Its
+// history lives in ParcelEvent, which is append-only: a mistake is fixed
+// by adding a CORRECTION event, never by rewriting the past — that's what
+// makes the chain of responsibility hold up afterwards.
 model Parcel {
   id             String  @id @default(cuid())
-  shipmentId     String
-  shipment       Shipment @relation(fields: [shipmentId], references: [id])
+  code           String  @unique
+  shipmentId     String?
+  shipment       Shipment? @relation(fields: [shipmentId], references: [id])
+  organizationId String?
+  organization   Organization? @relation("ParcelOwnerOrganization", fields: [organizationId], references: [id])
   description    String
   weightKg       Float
   lengthCm       Float?
   widthCm        Float?
   heightCm       Float?
   declaredValue  Float?
+  recipientName    String?
+  recipientAddress String?
+
+  status         String  @default("CREATED") // see PARCEL_STATUSES
+  // Who physically holds the parcel right now.
+  custodianType  String  @default("ORGANIZATION") // ORGANIZATION | CARRIER | DRIVER | RECIPIENT
+  custodianOrgId String?
+  custodianUserId String?
+
+  roundId String?
+  round   DeliveryRound? @relation(fields: [roundId], references: [id])
+
+  events    ParcelEvent[]
+  incidents Incident[]
 
   @@index([shipmentId])
+  @@index([organizationId])
+  @@index([roundId])
+  @@index([status])
+}
+
+// Append-only. Every entry answers: who, what, when, where, with what proof.
+model ParcelEvent {
+  id        String   @id @default(cuid())
+  parcelId  String
+  parcel    Parcel   @relation(fields: [parcelId], references: [id])
+  type      String // see PARCEL_EVENT_TYPES
+  actorId   String? // the user who performed the action
+  actorLabel String? // human-readable snapshot (name + org) at that time
+  location  String?
+  proof     String? // JSON: scan code, signature strokes, photo reference…
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([parcelId])
+}
+
+// Graduated incident handling — nothing is ever auto-labelled a theft.
+model Incident {
+  id         String   @id @default(cuid())
+  parcelId   String
+  parcel     Parcel   @relation(fields: [parcelId], references: [id])
+  status     String   @default("SIGNALE") // see INCIDENT_STATUSES
+  reason     String
+  openedById String?
+  openedBy   User?    @relation("IncidentOpener", fields: [openedById], references: [id])
+  resolution String?
+  resolvedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([parcelId])
+  @@index([status])
+}
+
+// Dispatch, logistics management and driving are roles held inside an
+// organization, not standalone account types: each person keeps their own
+// login, so every action stays attributable to a named human.
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId         String
+  user           User     @relation("OrganizationMemberUser", fields: [userId], references: [id])
+  role           String // ADMINISTRATEUR | RESPONSABLE_LOGISTIQUE | DISPATCHER | OPERATEUR | CHAUFFEUR
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, userId])
+  @@index([userId])
 }
 
 // FCL/LCL container carrying one or more shipments (cahier des charges §10).
@@ -436,8 +516,15 @@ model Message {
 model DeliveryRound {
   id           String   @id @default(cuid())
   reference    String   @unique // e.g. TRN-2026-0001
+  // The company the round belongs to, and the dispatcher (a member of that
+  // company) who built it.
+  organizationId String?
   dispatcherId String
   dispatcher   User     @relation("RoundDispatcher", fields: [dispatcherId], references: [id])
+  // The carrier company the parcels are handed over to, and optionally the
+  // individual driver doing the run.
+  carrierOrgId String?
+  carrierOrg   Organization? @relation("RoundCarrierOrganization", fields: [carrierOrgId], references: [id])
   driverId     String?
   driver       User?    @relation("RoundDriver", fields: [driverId], references: [id])
   date         DateTime
@@ -445,7 +532,8 @@ model DeliveryRound {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  stops RoundStop[]
+  stops   RoundStop[]
+  parcels Parcel[]
 
   @@index([dispatcherId])
   @@index([driverId])

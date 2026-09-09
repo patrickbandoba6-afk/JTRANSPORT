@@ -15,10 +15,73 @@ export const ROLES = [
 ] as const;
 export type Role = (typeof ROLES)[number];
 
-// Self-registration must never allow choosing ADMIN — that role is granted
-// out-of-band (seed script, or a future admin-invite flow), never picked
-// from a public form.
-export const SELF_REGISTERABLE_ROLES = ROLES.filter((r) => r !== "ADMIN") as Exclude<Role, "ADMIN">[];
+// Only three account types exist at signup: a person, a company, or a
+// carrier. "Dispatcher", "responsable logistique", "opérateur" and
+// "chauffeur" are NOT account types — they are roles held inside an
+// organization (see OrganizationMember), so a dispatcher can never spin up
+// an independent company and break the chain of custody.
+// ADMIN is granted out-of-band (seed / future invite flow), never picked
+// from a public form. DISPATCHER and CHAUFFEUR remain in ROLES only so
+// accounts created before this change stay readable.
+export const SELF_REGISTERABLE_ROLES = ["PARTICULIER", "PROFESSIONNEL", "TRANSPORTEUR"] as const;
+
+export const ORGANIZATION_MEMBER_ROLES = [
+  "ADMINISTRATEUR",
+  "RESPONSABLE_LOGISTIQUE",
+  "DISPATCHER",
+  "OPERATEUR",
+  "CHAUFFEUR",
+] as const;
+export type OrganizationMemberRole = (typeof ORGANIZATION_MEMBER_ROLES)[number];
+
+// A parcel's own lifecycle. Statuses only ever move forward through
+// recorded events — see ParcelEvent, which is append-only.
+export const PARCEL_STATUSES = [
+  "CREATED",
+  "READY_TO_DISPATCH",
+  "ASSIGNED",
+  "PICKED_UP",
+  "IN_DELIVERY",
+  "DELIVERED",
+  "RETURNED",
+  "INCIDENT",
+  "CLOSED",
+] as const;
+export type ParcelStatus = (typeof PARCEL_STATUSES)[number];
+
+export const PARCEL_EVENT_TYPES = [
+  "CREATED",
+  "LABELLED",
+  "READY_TO_DISPATCH",
+  "ASSIGNED_TO_CARRIER",
+  "PICKED_UP",
+  "DELIVERY_ATTEMPT",
+  "DELIVERED",
+  "RETURNED",
+  "INCIDENT_OPENED",
+  "INCIDENT_UPDATED",
+  "INCIDENT_RESOLVED",
+  "CORRECTION",
+] as const;
+export type ParcelEventType = (typeof PARCEL_EVENT_TYPES)[number];
+
+// Deliberately graduated: nothing is ever auto-labelled a theft. A parcel
+// that can't be accounted for opens as NON_LOCALISE and can only reach
+// VOL_CONFIRME after a human investigation closes it that way.
+export const INCIDENT_STATUSES = [
+  "SIGNALE",
+  "NON_LOCALISE",
+  "PERTE_SUSPECTEE",
+  "DOMMAGE_CONSTATE",
+  "LIVRAISON_CONTESTEE",
+  "EN_INVESTIGATION",
+  "RESOLU",
+  "VOL_CONFIRME",
+] as const;
+export type IncidentStatus = (typeof INCIDENT_STATUSES)[number];
+
+export const CUSTODIAN_TYPES = ["ORGANIZATION", "CARRIER", "DRIVER", "RECIPIENT"] as const;
+export type CustodianType = (typeof CUSTODIAN_TYPES)[number];
 
 export const MISSION_STATUSES = [
   "PUBLISHED",

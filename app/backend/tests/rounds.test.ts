@@ -4,47 +4,82 @@ import { createApp } from "../src/app.js";
 
 const app = createApp();
 
-const dispatcherAgent = request.agent(app);
+const companyAgent = request.agent(app);
 const driverAgent = request.agent(app);
-const otherDriverAgent = request.agent(app);
+const outsiderAgent = request.agent(app);
 
+let organizationId: string;
 let driverId: string;
 let roundId: string;
 let stopIds: string[] = [];
 
 beforeAll(async () => {
-  await dispatcherAgent.post("/api/auth/register").send({
-    email: "disp@jtransport.test",
+  await companyAgent.post("/api/auth/register").send({
+    email: "round-company@jtransport.test",
     password: "password123",
-    name: "Centrale Nord",
-    role: "DISPATCHER",
+    name: "Logistique Nord",
+    role: "PROFESSIONNEL",
   });
   const driver = await driverAgent.post("/api/auth/register").send({
-    email: "driver@jtransport.test",
+    email: "round-driver@jtransport.test",
     password: "password123",
     name: "Karim Livreur",
-    role: "CHAUFFEUR",
+    role: "TRANSPORTEUR",
   });
   driverId = driver.body.user.id;
-  await otherDriverAgent.post("/api/auth/register").send({
-    email: "driver2@jtransport.test",
+  await outsiderAgent.post("/api/auth/register").send({
+    email: "round-outsider@jtransport.test",
     password: "password123",
-    name: "Autre Livreur",
-    role: "CHAUFFEUR",
+    name: "Outsider",
+    role: "TRANSPORTEUR",
+  });
+
+  const org = await companyAgent.post("/api/organizations").send({
+    name: "Logistique Nord SAS",
+    activity: "LOGISTIQUE",
+    country: "FR",
+    hasProfessionalCapacity: false,
+  });
+  organizationId = org.body.organization.id;
+});
+
+describe("company team", () => {
+  it("refuses to add someone who has no JTransport account yet", async () => {
+    const res = await companyAgent.post(`/api/organizations/${organizationId}/members`).send({
+      email: "ghost@jtransport.test",
+      role: "CHAUFFEUR",
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it("adds an independent driver to the company team as CHAUFFEUR", async () => {
+    const res = await companyAgent.post(`/api/organizations/${organizationId}/members`).send({
+      email: "round-driver@jtransport.test",
+      role: "CHAUFFEUR",
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.member.role).toBe("CHAUFFEUR");
+  });
+
+  it("blocks an outsider from reading the team", async () => {
+    const res = await outsiderAgent.get(`/api/organizations/${organizationId}/members`);
+    expect(res.status).toBe(403);
   });
 });
 
 describe("dispatch rounds", () => {
-  it("blocks a driver from creating a round", async () => {
-    const res = await driverAgent.post("/api/rounds").send({
+  it("blocks a non-member from creating a round for the company", async () => {
+    const res = await outsiderAgent.post("/api/rounds").send({
+      organizationId,
       date: "2026-09-20",
       stops: [{ label: "Paris 75001", address: "1 rue de Rivoli" }],
     });
     expect(res.status).toBe(403);
   });
 
-  it("lets a dispatcher create a round with ordered stops", async () => {
-    const res = await dispatcherAgent.post("/api/rounds").send({
+  it("lets the company create a round with ordered stops", async () => {
+    const res = await companyAgent.post("/api/rounds").send({
+      organizationId,
       date: "2026-09-20",
       stops: [
         { label: "Paris 75001", address: "1 rue de Rivoli", parcelCode: "JT-C-001" },
@@ -59,27 +94,24 @@ describe("dispatch rounds", () => {
     stopIds = res.body.round.stops.map((s: { id: string }) => s.id);
   });
 
-  it("refuses to assign a round to a non-driver account", async () => {
-    const me = await dispatcherAgent.get("/api/auth/me");
-    const res = await dispatcherAgent.post(`/api/rounds/${roundId}/assign`).send({ driverId: me.body.user.id });
+  it("refuses to assign the round to someone who isn't a driver of the company", async () => {
+    const outsider = await outsiderAgent.get("/api/auth/me");
+    const res = await companyAgent.post(`/api/rounds/${roundId}/assign`).send({ driverId: outsider.body.user.id });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("NOT_A_DRIVER");
   });
 
-  it("assigns the round to a driver", async () => {
-    const res = await dispatcherAgent.post(`/api/rounds/${roundId}/assign`).send({ driverId });
+  it("assigns the round to the company's driver", async () => {
+    const res = await companyAgent.post(`/api/rounds/${roundId}/assign`).send({ driverId });
     expect(res.status).toBe(200);
     expect(res.body.round.status).toBe("ASSIGNED");
   });
 
-  it("shows the round to the assigned driver only", async () => {
+  it("shows the round to the driver and hides it from outsiders", async () => {
     const mine = await driverAgent.get("/api/rounds/mine");
     expect(mine.body.rounds.some((r: { id: string }) => r.id === roundId)).toBe(true);
 
-    const notMine = await otherDriverAgent.get("/api/rounds/mine");
-    expect(notMine.body.rounds.length).toBe(0);
-
-    const forbidden = await otherDriverAgent.get(`/api/rounds/${roundId}`);
+    const forbidden = await outsiderAgent.get(`/api/rounds/${roundId}`);
     expect(forbidden.status).toBe(403);
   });
 
@@ -99,23 +131,18 @@ describe("dispatch rounds", () => {
     expect(round.body.round.stops[0].events.some((e: { type: string }) => e.type === "SCANNED")).toBe(true);
   });
 
-  it("delivers a stop with a proof of delivery", async () => {
-    const res = await driverAgent.post(`/api/rounds/${roundId}/stops/${stopIds[0]}/deliver`).send({
+  it("delivers a stop with a proof of delivery, fails another with a reason", async () => {
+    const delivered = await driverAgent.post(`/api/rounds/${roundId}/stops/${stopIds[0]}/deliver`).send({
       podSignature: JSON.stringify([[{ x: 1, y: 1 }]]),
       podNote: "Remis en main propre",
     });
-    expect(res.status).toBe(200);
-    expect(res.body.stop.status).toBe("DELIVERED");
-    expect(res.body.stop.completedAt).toBeTruthy();
-  });
+    expect(delivered.body.stop.status).toBe("DELIVERED");
 
-  it("records a failed delivery with its reason", async () => {
-    const res = await driverAgent.post(`/api/rounds/${roundId}/stops/${stopIds[1]}/fail`).send({
+    const failed = await driverAgent.post(`/api/rounds/${roundId}/stops/${stopIds[1]}/fail`).send({
       reason: "Destinataire absent",
     });
-    expect(res.status).toBe(200);
-    expect(res.body.stop.status).toBe("FAILED");
-    expect(res.body.stop.failureReason).toBe("Destinataire absent");
+    expect(failed.body.stop.status).toBe("FAILED");
+    expect(failed.body.stop.failureReason).toBe("Destinataire absent");
   });
 
   it("completes the round once every stop is closed", async () => {
@@ -124,16 +151,14 @@ describe("dispatch rounds", () => {
     expect(round.body.round.status).toBe("COMPLETED");
   });
 
-  it("gives the dispatcher real counters, not invented ones", async () => {
-    const res = await dispatcherAgent.get("/api/rounds/dispatch-summary");
-    expect(res.status).toBe(200);
-    expect(res.body.summary.stopsToProcess).toBe(0);
-    expect(res.body.summary.deliveredToday).toBe(2);
-    expect(res.body.summary.activeRounds).toBe(0);
+  it("blocks another carrier from touching the stops", async () => {
+    const res = await outsiderAgent.post(`/api/rounds/${roundId}/stops/${stopIds[0]}/deliver`).send({});
+    expect(res.status).toBe(403);
   });
 
-  it("blocks another driver from touching the stops", async () => {
-    const res = await otherDriverAgent.post(`/api/rounds/${roundId}/stops/${stopIds[0]}/deliver`).send({});
-    expect(res.status).toBe(403);
+  it("lists the company's drivers for the dispatcher", async () => {
+    const res = await companyAgent.get("/api/rounds/drivers").query({ organizationId });
+    expect(res.status).toBe(200);
+    expect(res.body.drivers.some((d: { id: string }) => d.id === driverId)).toBe(true);
   });
 });

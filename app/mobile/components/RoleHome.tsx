@@ -34,10 +34,16 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
     { icon: "👤", title: "Mon compte", sub: "Profil et paramètres", href: "/(tabs)/profil" },
   ],
   DISPATCHER: [
-    { icon: "🚦", title: "Centrale Dispatcher", sub: "Aperçu — en construction", href: "/driver" },
-    { icon: "👨‍✈️", title: "Mes livreurs", sub: "Bientôt disponible", href: "#soon" },
-    { icon: "🗺️", title: "Tournées", sub: "Bientôt disponible", href: "#soon" },
-    { icon: "📍", title: "Suivi temps réel", sub: "Bientôt disponible", href: "#soon" },
+    { icon: "🗺️", title: "Mes tournées", sub: "Créer et affecter", href: "/dispatch" },
+    { icon: "💬", title: "Messages", sub: "Échanger avec vos livreurs", href: "/(tabs)/messages" },
+    { icon: "📮", title: "Expéditions", sub: "Colis et conteneurs", href: "/expeditions" },
+    { icon: "👤", title: "Mon compte", sub: "Profil et paramètres", href: "/(tabs)/profil" },
+  ],
+  CHAUFFEUR: [
+    { icon: "🚚", title: "Ma tournée du jour", sub: "Arrêts, scans, livraisons", href: "/driver" },
+    { icon: "💬", title: "Messages", sub: "Contacter la centrale", href: "/(tabs)/messages" },
+    { icon: "📋", title: "Missions", sub: "Missions disponibles", href: "/(tabs)/missions" },
+    { icon: "👤", title: "Mon compte", sub: "Profil et paramètres", href: "/(tabs)/profil" },
   ],
 };
 
@@ -47,6 +53,7 @@ const ROLE_TITLES: Record<string, string> = {
   PROFESSIONNEL: "Tableau de bord entreprise",
   TRANSPORTEUR: "Missions à pourvoir",
   DISPATCHER: "Centrale de dispatch",
+  CHAUFFEUR: "Votre tournée du jour",
 };
 
 export function useRoleContent() {

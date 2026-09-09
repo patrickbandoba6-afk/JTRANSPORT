@@ -14,9 +14,12 @@ export default function RootLayout() {
           <Stack.Screen name="mon-entreprise" options={{ headerShown: true, headerTitle: "Mon entreprise" }} />
           <Stack.Screen name="capacites" options={{ headerShown: true, headerTitle: "Capacités" }} />
           <Stack.Screen name="contrats" options={{ headerShown: true, headerTitle: "Contrats" }} />
+          <Stack.Screen name="contrats/[id]" options={{ headerShown: true, headerTitle: "Contrat de transport" }} />
           <Stack.Screen name="expeditions" options={{ headerShown: true, headerTitle: "Expéditions" }} />
           <Stack.Screen name="expeditions/[id]" options={{ headerShown: true, headerTitle: "Expédition" }} />
           <Stack.Screen name="factures" options={{ headerShown: true, headerTitle: "Factures" }} />
+          <Stack.Screen name="conversations/[id]" options={{ headerShown: true, headerTitle: "Conversation" }} />
+          <Stack.Screen name="driver/index" options={{ headerShown: true, headerTitle: "JTransport Driver" }} />
         </Stack>
       </Bootstrap>
     </AuthProvider>

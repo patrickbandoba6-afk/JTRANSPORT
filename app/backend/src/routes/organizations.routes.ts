@@ -3,7 +3,8 @@ import { z } from "zod";
 import { prisma } from "../db.js";
 import { asyncHandler, ApiError } from "../middleware/error.js";
 import { requireAuth } from "../middleware/auth.js";
-import { ORGANIZATION_ACTIVITIES } from "../domain.js";
+import { ORGANIZATION_ACTIVITIES, ORGANIZATION_MEMBER_ROLES } from "../domain.js";
+import { membershipOrThrow } from "../utils/membership.js";
 
 export const organizationsRouter = Router();
 
@@ -63,6 +64,54 @@ organizationsRouter.get(
     });
     if (!organization) throw new ApiError(404, "ORGANIZATION_NOT_FOUND");
     res.json({ organization });
+  }),
+);
+
+// Team members: dispatch, logistics and driving are roles inside the
+// company, so each person keeps their own login and every action stays
+// attributable to a named human (no shared dispatcher@company.com).
+organizationsRouter.get(
+  "/:id/members",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    await membershipOrThrow(req.params.id, req.user!.id, [...ORGANIZATION_MEMBER_ROLES]);
+    const members = await prisma.organizationMember.findMany({
+      where: { organizationId: req.params.id },
+      include: { user: { select: { id: true, name: true, email: true } } },
+      orderBy: { createdAt: "asc" },
+    });
+    res.json({ members });
+  }),
+);
+
+organizationsRouter.post(
+  "/:id/members",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const body = z
+      .object({ email: z.string().email(), role: z.enum(ORGANIZATION_MEMBER_ROLES) })
+      .parse(req.body);
+    await membershipOrThrow(req.params.id, req.user!.id, ["ADMINISTRATEUR", "RESPONSABLE_LOGISTIQUE"]);
+
+    const user = await prisma.user.findUnique({ where: { email: body.email } });
+    if (!user) {
+      throw new ApiError(
+        404,
+        "USER_NOT_FOUND",
+        "Cette personne doit d'abord créer son propre compte JTransport, puis vous l'ajoutez à l'équipe.",
+      );
+    }
+
+    const existing = await prisma.organizationMember.findUnique({
+      where: { organizationId_userId: { organizationId: req.params.id, userId: user.id } },
+    });
+    if (existing) throw new ApiError(409, "ALREADY_MEMBER");
+
+    const member = await prisma.organizationMember.create({
+      data: { organizationId: req.params.id, userId: user.id, role: body.role },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+    res.status(201).json({ member });
   }),
 );
 

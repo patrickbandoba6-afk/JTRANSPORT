@@ -4,6 +4,7 @@ import { prisma } from "../db.js";
 import { asyncHandler, ApiError } from "../middleware/error.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { SHIPMENT_STATUSES, CUSTOMS_STATUSES } from "../domain.js";
+import { newParcelCode } from "../utils/parcelCode.js";
 
 export const shipmentsRouter = Router();
 
@@ -68,7 +69,7 @@ shipmentsRouter.post(
         recipientPhone: body.recipientPhone,
         recipientEmail: body.recipientEmail,
         recipientAddress: body.recipientAddress,
-        parcels: { create: body.parcels },
+        parcels: { create: body.parcels.map((p) => ({ ...p, code: newParcelCode() })) },
         events: { create: { type: "CREATED" } },
         ...(body.originCountry.toUpperCase() !== body.destinationCountry.toUpperCase()
           ? { customsCase: { create: {} } }

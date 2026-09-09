@@ -2,9 +2,13 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db.js";
 import { asyncHandler, ApiError } from "../middleware/error.js";
-import { requireAuth, requireRole } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth.js";
+import { ORGANIZATION_MEMBER_ROLES } from "../domain.js";
+import { membershipOrThrow, isMemberOf } from "../utils/membership.js";
 
 export const roundsRouter = Router();
+
+const DISPATCH_ROLES = ["ADMINISTRATEUR", "RESPONSABLE_LOGISTIQUE", "DISPATCHER"] as const;
 
 const stopInputSchema = z.object({
   label: z.string().min(1),
@@ -14,8 +18,9 @@ const stopInputSchema = z.object({
 });
 
 const createRoundSchema = z.object({
+  organizationId: z.string().min(1),
   date: z.coerce.date(),
-  stops: z.array(stopInputSchema).min(1),
+  stops: z.array(stopInputSchema).default([]),
 });
 
 async function nextRoundReference(): Promise<string> {
@@ -35,6 +40,7 @@ async function loadRoundForDriver(roundId: string, userId: string) {
 
 async function refreshRoundStatus(roundId: string) {
   const stops = await prisma.roundStop.findMany({ where: { roundId } });
+  if (stops.length === 0) return;
   const allDone = stops.every((s) => s.status === "DELIVERED" || s.status === "FAILED");
   const anyStarted = stops.some((s) => s.status !== "PENDING");
   await prisma.deliveryRound.update({
@@ -43,16 +49,19 @@ async function refreshRoundStatus(roundId: string) {
   });
 }
 
-// --- Dispatcher side -------------------------------------------------
+// --- dispatch side (a role inside the company) ------------------------
 
 roundsRouter.post(
   "/",
-  requireRole("DISPATCHER", "ADMIN"),
+  requireAuth,
   asyncHandler(async (req, res) => {
     const body = createRoundSchema.parse(req.body);
+    await membershipOrThrow(body.organizationId, req.user!.id, DISPATCH_ROLES);
+
     const round = await prisma.deliveryRound.create({
       data: {
         reference: await nextRoundReference(),
+        organizationId: body.organizationId,
         dispatcherId: req.user!.id,
         date: body.date,
         stops: { create: body.stops.map((s, i) => ({ ...s, position: i + 1 })) },
@@ -63,67 +72,112 @@ roundsRouter.post(
   }),
 );
 
+// Hands the round to a carrier company and/or a named driver. The
+// dispatcher assigns work; they never hold the driver's password.
 roundsRouter.post(
   "/:id/assign",
-  requireRole("DISPATCHER", "ADMIN"),
+  requireAuth,
   asyncHandler(async (req, res) => {
-    const { driverId } = z.object({ driverId: z.string().min(1) }).parse(req.body);
+    const body = z
+      .object({ carrierOrgId: z.string().optional(), driverId: z.string().optional() })
+      .refine((b) => b.carrierOrgId || b.driverId, { message: "carrierOrgId ou driverId requis" })
+      .parse(req.body);
+
     const round = await prisma.deliveryRound.findUnique({ where: { id: req.params.id } });
     if (!round) throw new ApiError(404, "ROUND_NOT_FOUND");
-    if (round.dispatcherId !== req.user!.id && req.user!.role !== "ADMIN") throw new ApiError(403, "FORBIDDEN");
+    if (!round.organizationId) throw new ApiError(409, "ROUND_WITHOUT_ORGANIZATION");
+    await membershipOrThrow(round.organizationId, req.user!.id, DISPATCH_ROLES);
 
-    const driver = await prisma.user.findUnique({ where: { id: driverId } });
-    if (!driver) throw new ApiError(404, "DRIVER_NOT_FOUND");
-    if (driver.role !== "CHAUFFEUR") {
-      throw new ApiError(400, "NOT_A_DRIVER", "Ce compte n'est pas un compte chauffeur/livreur.");
+    if (body.carrierOrgId) {
+      const carrier = await prisma.organization.findUnique({ where: { id: body.carrierOrgId } });
+      if (!carrier) throw new ApiError(404, "CARRIER_NOT_FOUND");
     }
 
-    // The dispatcher assigns work to a driver account; they never hold that
-    // account's password (cahier des charges §17).
+    if (body.driverId) {
+      const driverOrgId = body.carrierOrgId ?? round.carrierOrgId ?? round.organizationId;
+      const isDriverMember = await prisma.organizationMember.findUnique({
+        where: { organizationId_userId: { organizationId: driverOrgId, userId: body.driverId } },
+      });
+      if (!isDriverMember || isDriverMember.role !== "CHAUFFEUR") {
+        throw new ApiError(
+          400,
+          "NOT_A_DRIVER",
+          "Ce compte n'est pas rattaché comme chauffeur à l'entreprise concernée.",
+        );
+      }
+    }
+
     const updated = await prisma.deliveryRound.update({
       where: { id: round.id },
-      data: { driverId: driver.id, status: "ASSIGNED" },
+      data: {
+        carrierOrgId: body.carrierOrgId ?? round.carrierOrgId,
+        driverId: body.driverId ?? round.driverId,
+        status: "ASSIGNED",
+      },
     });
     res.json({ round: updated });
   }),
 );
 
-// Live counters for the dispatcher centrale — computed from real rows only.
+// Drivers a dispatcher can assign work to: members of the company (or of
+// the carrier company) holding the CHAUFFEUR role. Only id/name/email.
+roundsRouter.get(
+  "/drivers",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const { organizationId } = z.object({ organizationId: z.string().min(1) }).parse(req.query);
+    await membershipOrThrow(organizationId, req.user!.id, DISPATCH_ROLES);
+
+    const members = await prisma.organizationMember.findMany({
+      where: { organizationId, role: "CHAUFFEUR" },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+    res.json({ drivers: members.map((m) => m.user) });
+  }),
+);
+
+// Counters computed from real rows only — nothing invented.
 roundsRouter.get(
   "/dispatch-summary",
-  requireRole("DISPATCHER", "ADMIN"),
+  requireAuth,
   asyncHandler(async (req, res) => {
-    const rounds = await prisma.deliveryRound.findMany({
-      where: { dispatcherId: req.user!.id },
-      include: { stops: true },
-    });
-    const stops = rounds.flatMap((r) => r.stops);
+    const { organizationId } = z.object({ organizationId: z.string().min(1) }).parse(req.query);
+    await membershipOrThrow(organizationId, req.user!.id, [...ORGANIZATION_MEMBER_ROLES]);
+
+    const [rounds, parcels] = await Promise.all([
+      prisma.deliveryRound.findMany({ where: { organizationId }, include: { stops: true } }),
+      prisma.parcel.findMany({ where: { organizationId } }),
+    ]);
+
+    const today = new Date().toDateString();
     res.json({
       summary: {
-        stopsToProcess: stops.filter((s) => s.status === "PENDING").length,
+        parcelsToDispatch: parcels.filter((p) => p.status === "READY_TO_DISPATCH" || p.status === "CREATED").length,
+        parcelsAssigned: parcels.filter((p) => p.status === "ASSIGNED" || p.status === "PICKED_UP" || p.status === "IN_DELIVERY").length,
+        parcelsDelivered: parcels.filter((p) => p.status === "DELIVERED").length,
+        parcelsReturned: parcels.filter((p) => p.status === "RETURNED").length,
+        parcelsInIncident: parcels.filter((p) => p.status === "INCIDENT").length,
         activeRounds: rounds.filter((r) => r.status === "IN_PROGRESS" || r.status === "ASSIGNED").length,
-        driversOnDuty: new Set(rounds.filter((r) => r.status === "IN_PROGRESS").map((r) => r.driverId)).size,
-        deliveredToday: stops.filter(
-          (s) => s.status === "DELIVERED" && s.completedAt && s.completedAt.toDateString() === new Date().toDateString(),
-        ).length,
+        driversOnDuty: new Set(rounds.filter((r) => r.status === "IN_PROGRESS").map((r) => r.driverId).filter(Boolean)).size,
+        stopsDeliveredToday: rounds
+          .flatMap((r) => r.stops)
+          .filter((s) => s.status === "DELIVERED" && s.completedAt && s.completedAt.toDateString() === today).length,
       },
     });
   }),
 );
 
-// --- Shared ----------------------------------------------------------
+// --- shared -----------------------------------------------------------
 
 roundsRouter.get(
   "/mine",
   requireAuth,
   asyncHandler(async (req, res) => {
     const rounds = await prisma.deliveryRound.findMany({
-      where:
-        req.user!.role === "CHAUFFEUR"
-          ? { driverId: req.user!.id }
-          : { dispatcherId: req.user!.id },
+      where: { OR: [{ driverId: req.user!.id }, { dispatcherId: req.user!.id }] },
       include: {
         stops: { orderBy: { position: "asc" } },
+        parcels: { select: { id: true, code: true, status: true, recipientName: true, recipientAddress: true } },
         driver: { select: { id: true, name: true } },
       },
       orderBy: { date: "desc" },
@@ -140,18 +194,25 @@ roundsRouter.get(
       where: { id: req.params.id },
       include: {
         stops: { orderBy: { position: "asc" }, include: { events: { orderBy: { createdAt: "asc" } } } },
+        parcels: { select: { id: true, code: true, status: true, recipientName: true, recipientAddress: true } },
         driver: { select: { id: true, name: true } },
       },
     });
     if (!round) throw new ApiError(404, "ROUND_NOT_FOUND");
+
     const allowed =
-      round.driverId === req.user!.id || round.dispatcherId === req.user!.id || req.user!.role === "ADMIN";
+      round.driverId === req.user!.id ||
+      round.dispatcherId === req.user!.id ||
+      req.user!.role === "ADMIN" ||
+      (round.organizationId ? await isMemberOf(round.organizationId, req.user!.id, [...ORGANIZATION_MEMBER_ROLES]) : false) ||
+      (round.carrierOrgId ? await isMemberOf(round.carrierOrgId, req.user!.id, [...ORGANIZATION_MEMBER_ROLES]) : false);
     if (!allowed) throw new ApiError(403, "FORBIDDEN");
+
     res.json({ round });
   }),
 );
 
-// --- Driver side -----------------------------------------------------
+// --- driver side ------------------------------------------------------
 
 async function loadStop(roundId: string, stopId: string) {
   const stop = await prisma.roundStop.findUnique({ where: { id: stopId } });

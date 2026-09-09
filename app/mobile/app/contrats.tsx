@@ -87,8 +87,17 @@ export default function Contrats() {
               <Tag label={item.status} />
               <Text style={styles.price}>{item.price} €</Text>
               <Text style={styles.muted}>Rôle : {isOwner ? "Donneur d'ordre" : "Prestataire"}</Text>
+              <Button
+                title="Ouvrir le contrat →"
+                onPress={() => router.push(`/contrats/${item.id}` as never)}
+              />
               {item.status !== "FULLY_SIGNED" && item.status !== "CANCELLED" && !alreadySigned && (
-                <Button title={busyId === item.id ? "…" : "Signer le contrat"} onPress={() => sign(item.id)} disabled={busyId === item.id} />
+                <Button
+                  title={busyId === item.id ? "…" : "Signer sans pièce jointe"}
+                  variant="secondary"
+                  onPress={() => sign(item.id)}
+                  disabled={busyId === item.id}
+                />
               )}
               {alreadySigned && <Text style={styles.muted}>✅ Signé de votre part</Text>}
               {canInvoice && (
