@@ -22,7 +22,7 @@ const CATEGORIES: { icon: string; label: string; href: string | null }[] = [
   { icon: "✈️", label: "Fret aérien", href: null },
   { icon: "🚆", label: "Fret ferroviaire", href: null },
   { icon: "🚗", label: "Transport de véhicules", href: null },
-  { icon: "📦", label: "Colis & palettes", href: "/missions" },
+  { icon: "📦", label: "Colis & palettes", href: "/expeditions" },
   { icon: "🛃", label: "Douane & dédouanement", href: null },
   { icon: "🌍", label: "Import / Export", href: null },
   { icon: "🏭", label: "Logistique & entreposage", href: null },

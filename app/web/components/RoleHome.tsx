@@ -16,10 +16,10 @@ const QUICK_ACTIONS_BY_ROLE: Record<
     { icon: "🎓", title: "Mes capacités & offres", sub: "Proposez ou gérez vos capacités de transport", href: "/mon-entreprise" },
   ],
   PARTICULIER: [
-    { icon: "📦", title: "Publier une mission", sub: "Envoyer un colis ou une marchandise", href: "/publier" },
+    { icon: "📮", title: "Envoyer un colis", sub: "Suivi, douane, dernier kilomètre", href: "/expeditions" },
+    { icon: "📦", title: "Publier une mission", sub: "Marchandises volumineuses ou palettes", href: "/publier" },
     { icon: "🔎", title: "Rechercher une mission", sub: "Comparer les prestataires disponibles", href: "/missions" },
     { icon: "📋", title: "Mes missions", sub: "Suivre vos publications et vos offres reçues", href: "/mes-missions" },
-    { icon: "🤝", title: "Trouver un prestataire", sub: "Transporteurs, commissionnaires…", href: "/prestataires" },
   ],
   PROFESSIONNEL: [
     { icon: "🏢", title: "Mon entreprise", sub: "Profil, activité, capacités déclarées", href: "/mon-entreprise" },

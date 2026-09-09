@@ -78,6 +78,71 @@ export type Contract = {
 
 export type OfferWithMission = MissionOffer & { mission: Mission };
 
+export type Parcel = {
+  id: string;
+  shipmentId: string;
+  description: string;
+  weightKg: number;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  declaredValue: number | null;
+};
+
+export type ShipmentContainer = {
+  id: string;
+  containerNumber: string;
+  type: string;
+  sealNumber: string | null;
+  originPort: string;
+  destinationPort: string;
+  shippingLine: string | null;
+  vesselName: string | null;
+  etd: string | null;
+  eta: string | null;
+  status: string;
+};
+
+export type TrackingEvent = {
+  id: string;
+  shipmentId: string;
+  type: string;
+  location: string | null;
+  note: string | null;
+  createdAt: string;
+};
+
+export type CustomsCase = {
+  id: string;
+  shipmentId: string;
+  status: "DOCUMENTS_PENDING" | "SUBMITTED" | "UNDER_REVIEW" | "CLEARED" | "BLOCKED";
+  declaredValue: number | null;
+  hsCode: string | null;
+  incoterm: string | null;
+  estimatedFees: number | null;
+};
+
+export type Shipment = {
+  id: string;
+  ownerId: string;
+  originCity: string;
+  originCountry: string;
+  destinationCity: string;
+  destinationCountry: string;
+  recipientName: string;
+  recipientPhone: string | null;
+  recipientEmail: string | null;
+  recipientAddress: string;
+  status: string;
+  containerId: string | null;
+  createdAt: string;
+  parcels?: Parcel[];
+  container?: ShipmentContainer | null;
+  customsCase?: CustomsCase | null;
+  events?: TrackingEvent[];
+  _count?: { events: number };
+};
+
 // Server Components (no browser) call the API directly with this base URL.
 // Client Components should call relative "/api/..." paths so the browser
 // sends the auth cookie — see NEXT_PUBLIC_API_URL usage in apiFetch below.
@@ -114,5 +179,33 @@ export async function apiFetch<T>(
     throw new ApiRequestError(res.status, body.error ?? "UNKNOWN_ERROR", body.message);
   }
 
+  return body as T;
+}
+
+export type DocumentRecord = {
+  id: string;
+  ownerId: string;
+  dossierType: string;
+  dossierId: string;
+  type: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  status: string;
+  createdAt: string;
+};
+
+// Separate from apiFetch: multipart uploads must NOT set a JSON
+// Content-Type — the browser sets the multipart boundary itself.
+export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiRequestError(res.status, body.error ?? "UNKNOWN_ERROR", body.message);
+  }
   return body as T;
 }

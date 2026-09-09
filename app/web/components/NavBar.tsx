@@ -18,6 +18,7 @@ export function NavBar() {
           <Link href="/">Accueil</Link>
           <Link href="/missions">Missions</Link>
           <Link href="/mes-missions">Mes missions</Link>
+          <Link href="/expeditions">Expéditions</Link>
           <Link href="/contrats">Contrats</Link>
           <Link href="/mon-entreprise">Mon entreprise</Link>
           <Link href="/prestataires">Prestataires</Link>
