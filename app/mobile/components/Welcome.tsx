@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { colors } from "../lib/theme";
 import { Button } from "./ui";
 
@@ -16,9 +16,7 @@ export function Welcome({
 }) {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <View style={styles.badge}>
-        <Text style={styles.badgeText}>J</Text>
-      </View>
+      <Image source={require("../assets/logo.png")} style={styles.logo} />
       <Text style={styles.title}>JTRANSPORT</Text>
       <Text style={styles.tagline}>VOTRE TRANSPORT, NOTRE PRIORITÉ</Text>
 
@@ -43,16 +41,7 @@ export function Welcome({
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#fff" },
   content: { alignItems: "center", padding: 28, paddingTop: 90 },
-  badge: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    backgroundColor: colors.blue600,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  badgeText: { color: "#fff", fontWeight: "900", fontSize: 30 },
+  logo: { width: 96, height: 96, borderRadius: 48, marginBottom: 12 },
   title: { color: colors.navy900, fontSize: 20, fontWeight: "800" },
   tagline: { color: colors.muted, fontSize: 10, letterSpacing: 1, marginTop: 2 },
   welcome: { fontSize: 22, fontWeight: "800", color: colors.ink, marginBottom: 8 },

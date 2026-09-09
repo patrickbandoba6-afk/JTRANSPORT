@@ -29,16 +29,18 @@ export function Bootstrap({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (stage !== "logo") return;
-    const t = setTimeout(() => setStage("loading"), 900);
+    const t = setTimeout(() => setStage("loading"), 1300);
     return () => clearTimeout(t);
   }, [stage]);
 
+  // Long enough for the progress bar to actually reach 100% (see Splash),
+  // and it still waits on the real session check before moving on.
   useEffect(() => {
     if (stage !== "loading") return;
     if (loading || onboarded === null) return;
     const t = setTimeout(() => {
       setStage(onboarded ? "welcome-home" : "onboarding");
-    }, 1300);
+    }, 1800);
     return () => clearTimeout(t);
   }, [stage, loading, onboarded]);
 

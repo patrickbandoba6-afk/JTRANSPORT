@@ -4,6 +4,8 @@
     "slug": "jtransport-marketplace",
     "version": "1.0.0",
     "scheme": "jtransport",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
     "plugins": ["expo-router"],
     "experiments": {"typedRoutes": true}
   }

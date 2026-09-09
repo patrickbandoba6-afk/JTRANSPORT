@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { colors } from "../lib/theme";
-import { Button, Card, Tag } from "../components/ui";
-import { useAuth } from "../lib/auth-context";
-import { apiFetch, type Mission } from "../lib/api";
+import { colors } from "../../lib/theme";
+import { Button, Card, Tag } from "../../components/ui";
+import { useAuth } from "../../lib/auth-context";
+import { apiFetch, type Mission } from "../../lib/api";
 
 export default function MesMissions() {
   const { user, loading: authLoading } = useAuth();

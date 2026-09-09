@@ -19,12 +19,12 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
     { icon: "📮", title: "Envoyer un colis", sub: "Suivi, douane, dernier km", href: "/expeditions" },
     { icon: "📦", title: "Publier une mission", sub: "Marchandises, palettes", href: "/publier" },
     { icon: "🔎", title: "Rechercher une mission", sub: "Comparer les prestataires", href: "/(tabs)/missions" },
-    { icon: "📋", title: "Mes missions", sub: "Suivre mes publications", href: "/mes-missions" },
+    { icon: "📋", title: "Mes missions", sub: "Suivre mes publications", href: "/(tabs)/mes-missions" },
   ],
   PROFESSIONNEL: [
     { icon: "🏢", title: "Mon entreprise", sub: "Profil et activité", href: "/mon-entreprise" },
     { icon: "🎓", title: "Mes capacités", sub: "Publier une capacité", href: "/mon-entreprise" },
-    { icon: "📋", title: "Mes missions", sub: "Publications et offres", href: "/mes-missions" },
+    { icon: "📋", title: "Mes missions", sub: "Publications et offres", href: "/(tabs)/mes-missions" },
     { icon: "📄", title: "Contrats", sub: "Consulter et signer", href: "/contrats" },
   ],
   TRANSPORTEUR: [
@@ -155,7 +155,7 @@ export function DispatcherNotice() {
 }
 
 const styles = StyleSheet.create({
-  quickGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, paddingHorizontal: 16, marginTop: -18, marginBottom: 8 },
+  quickGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, paddingHorizontal: 16, marginTop: 18, marginBottom: 12 },
   quickCard: {
     width: "47%",
     backgroundColor: "#fff",
