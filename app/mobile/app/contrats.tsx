@@ -4,13 +4,15 @@ import { useRouter } from "expo-router";
 import { colors } from "../lib/theme";
 import { Button, Card, Tag } from "../components/ui";
 import { useAuth } from "../lib/auth-context";
-import { apiFetch, type Contract } from "../lib/api";
+import { apiFetch, ApiRequestError, type Contract } from "../lib/api";
 
 export default function Contrats() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [contracts, setContracts] = useState<Contract[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [invoicedIds, setInvoicedIds] = useState<Set<string>>(new Set());
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -35,6 +37,24 @@ export default function Contrats() {
     }
   }
 
+  async function generateInvoice(contractId: string) {
+    setBusyId(contractId);
+    setInvoiceError(null);
+    try {
+      await apiFetch("/api/invoices", { method: "POST", body: JSON.stringify({ contractId }) });
+      setInvoicedIds((s) => new Set(s).add(contractId));
+      router.push("/factures" as never);
+    } catch (err) {
+      setInvoiceError(
+        err instanceof ApiRequestError && err.code === "INVOICE_ALREADY_EXISTS"
+          ? "Une facture existe déjà pour ce contrat."
+          : "Impossible de générer la facture.",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   if (authLoading) return null;
 
   if (!user) {
@@ -51,6 +71,7 @@ export default function Contrats() {
   return (
     <View style={styles.screen}>
       <Text style={[styles.title, { padding: 16, paddingTop: 60 }]}>📄 Contrats & signature</Text>
+      {invoiceError && <Text style={[styles.muted, { paddingHorizontal: 16 }]}>{invoiceError}</Text>}
       <FlatList
         data={contracts ?? []}
         keyExtractor={(c) => c.id}
@@ -59,6 +80,7 @@ export default function Contrats() {
         renderItem={({ item }) => {
           const isOwner = item.ownerId === user.id;
           const alreadySigned = isOwner ? item.ownerSignedAt : item.counterpartySignedAt;
+          const canInvoice = !isOwner && item.status === "FULLY_SIGNED" && !invoicedIds.has(item.id);
           return (
             <Card>
               <Tag label={item.type} />
@@ -69,6 +91,14 @@ export default function Contrats() {
                 <Button title={busyId === item.id ? "…" : "Signer le contrat"} onPress={() => sign(item.id)} disabled={busyId === item.id} />
               )}
               {alreadySigned && <Text style={styles.muted}>✅ Signé de votre part</Text>}
+              {canInvoice && (
+                <Button
+                  title={busyId === item.id ? "…" : "🧾 Générer la facture"}
+                  variant="secondary"
+                  onPress={() => generateInvoice(item.id)}
+                  disabled={busyId === item.id}
+                />
+              )}
             </Card>
           );
         }}

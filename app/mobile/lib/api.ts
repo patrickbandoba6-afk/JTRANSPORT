@@ -133,6 +133,27 @@ export type Shipment = {
   events?: TrackingEvent[];
 };
 
+export type InvoiceLine = { id: string; description: string; quantity: number; unitPrice: number; amount: number };
+
+export type Invoice = {
+  id: string;
+  number: string;
+  contractId: string;
+  issuerId: string;
+  recipientId: string;
+  status: "DRAFT" | "SENT" | "PAID" | "OVERDUE" | "CANCELLED";
+  currency: string;
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  total: number;
+  dueDate: string | null;
+  paidAt: string | null;
+  eInvoicingStatus: "NOT_TRANSMITTED" | "TRANSMITTED" | "FAILED";
+  createdAt: string;
+  lines?: InvoiceLine[];
+};
+
 export type DocumentRecord = {
   id: string;
   dossierType: string;

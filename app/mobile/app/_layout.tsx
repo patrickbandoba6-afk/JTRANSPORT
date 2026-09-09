@@ -17,6 +17,7 @@ export default function RootLayout() {
           <Stack.Screen name="mes-missions" options={{ headerShown: true, headerTitle: "Mes missions" }} />
           <Stack.Screen name="expeditions" options={{ headerShown: true, headerTitle: "Expéditions" }} />
           <Stack.Screen name="expeditions/[id]" options={{ headerShown: true, headerTitle: "Expédition" }} />
+          <Stack.Screen name="factures" options={{ headerShown: true, headerTitle: "Factures" }} />
         </Stack>
       </Bootstrap>
     </AuthProvider>

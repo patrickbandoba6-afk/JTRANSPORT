@@ -33,7 +33,9 @@ export default function Profil() {
         <Text style={styles.muted}>Profil : {user.role}</Text>
       </Card>
       <Button title="📋 Mes missions" variant="secondary" onPress={() => router.push("/mes-missions")} />
+      <Button title="📮 Mes expéditions" variant="secondary" onPress={() => router.push("/expeditions")} />
       <Button title="📄 Mes contrats" variant="secondary" onPress={() => router.push("/contrats")} />
+      <Button title="🧾 Mes factures" variant="secondary" onPress={() => router.push("/factures")} />
       <Button title="🏢 Mon entreprise" variant="secondary" onPress={() => router.push("/mon-entreprise")} />
       <Button title="Déconnexion" variant="secondary" onPress={logout} />
     </View>
