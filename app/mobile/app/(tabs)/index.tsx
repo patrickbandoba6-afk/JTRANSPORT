@@ -10,14 +10,14 @@ import { useRoleContent, QuickActionsGrid, ProfessionnelPanel, TransporteurPanel
 
 // null = module pas encore construit — visible pour respecter la structure
 // du cahier des charges, mais honnêtement marqué "Bientôt".
-const CATEGORIES: { icon: string; label: string; href: "/(tabs)/missions" | "/capacites" | null }[] = [
+const CATEGORIES: { icon: string; label: string; href: "/(tabs)/missions" | "/capacites" | "/expeditions" | null }[] = [
   { icon: "🚚", label: "Marchandises", href: "/(tabs)/missions" },
   { icon: "🚌", label: "Voyageurs", href: null },
   { icon: "🚢", label: "Maritime", href: null },
   { icon: "✈️", label: "Aérien", href: null },
   { icon: "🚆", label: "Ferroviaire", href: null },
   { icon: "🚗", label: "Véhicules", href: null },
-  { icon: "📦", label: "Colis & palettes", href: "/(tabs)/missions" },
+  { icon: "📦", label: "Colis & palettes", href: "/expeditions" },
   { icon: "🛃", label: "Douane", href: null },
   { icon: "🚛", label: "Capacités", href: "/capacites" },
   { icon: "🔲", label: "Toutes", href: "/(tabs)/missions" },

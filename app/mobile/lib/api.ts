@@ -80,6 +80,70 @@ export type Contract = {
 
 export type OfferWithMission = MissionOffer & { mission: Mission };
 
+export type Parcel = {
+  id: string;
+  shipmentId: string;
+  description: string;
+  weightKg: number;
+};
+
+export type ShipmentContainer = {
+  id: string;
+  containerNumber: string;
+  type: string;
+  originPort: string;
+  destinationPort: string;
+  vesselName: string | null;
+  eta: string | null;
+  status: string;
+};
+
+export type TrackingEvent = {
+  id: string;
+  shipmentId: string;
+  type: string;
+  location: string | null;
+  note: string | null;
+  createdAt: string;
+};
+
+export type CustomsCase = {
+  id: string;
+  shipmentId: string;
+  status: "DOCUMENTS_PENDING" | "SUBMITTED" | "UNDER_REVIEW" | "CLEARED" | "BLOCKED";
+  hsCode: string | null;
+  estimatedFees: number | null;
+};
+
+export type Shipment = {
+  id: string;
+  ownerId: string;
+  originCity: string;
+  originCountry: string;
+  destinationCity: string;
+  destinationCountry: string;
+  recipientName: string;
+  recipientAddress: string;
+  status: string;
+  containerId: string | null;
+  createdAt: string;
+  parcels?: Parcel[];
+  container?: ShipmentContainer | null;
+  customsCase?: CustomsCase | null;
+  events?: TrackingEvent[];
+};
+
+export type DocumentRecord = {
+  id: string;
+  dossierType: string;
+  dossierId: string;
+  type: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: string;
+};
+
 // The phone can't reach "localhost" (that would be the phone itself), so
 // this must be the computer's LAN IP while running through Expo Go in dev.
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.20:4000";

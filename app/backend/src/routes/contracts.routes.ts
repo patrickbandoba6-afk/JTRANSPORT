@@ -8,12 +8,24 @@ import { signatureProvider } from "../utils/signature.js";
 
 export const contractsRouter = Router();
 
-const createContractSchema = z.object({
+// Two ways to open a contract: from an ACCEPTED mission offer (the
+// marketplace bidding flow), or directly from a published TransportCapacity
+// ("louer sa capacité" — cahier des charges §16/§25, negotiated price).
+const fromOfferSchema = z.object({
   offerId: z.string().min(1),
+  capacityId: z.undefined(),
   organizationId: z.string().optional(),
   type: z.enum(CONTRACT_TYPES).default("TRANSPORT"),
   terms: z.string().optional(),
 });
+const fromCapacitySchema = z.object({
+  capacityId: z.string().min(1),
+  offerId: z.undefined(),
+  price: z.coerce.number().positive(),
+  type: z.enum(CONTRACT_TYPES).default("MISE_A_DISPOSITION"),
+  terms: z.string().optional(),
+});
+const createContractSchema = z.union([fromOfferSchema, fromCapacitySchema]);
 
 async function logEvent(contractId: string, type: string, data?: unknown) {
   await prisma.contractEvent.create({
@@ -21,49 +33,74 @@ async function logEvent(contractId: string, type: string, data?: unknown) {
   });
 }
 
-// Generates a contract from an ACCEPTED offer. Only the mission owner
-// (donneur d'ordre) can trigger this — matching the cahier des charges
-// contract workflow: "modèle → préremplissage → conditions → devis →
-// acceptation → signature".
 contractsRouter.post(
   "/",
   requireAuth,
   asyncHandler(async (req, res) => {
     const body = createContractSchema.parse(req.body);
 
-    const offer = await prisma.missionOffer.findUnique({
-      where: { id: body.offerId },
-      include: { mission: true },
-    });
-    if (!offer) throw new ApiError(404, "OFFER_NOT_FOUND");
-    if (offer.mission.ownerId !== req.user!.id) {
-      throw new ApiError(403, "FORBIDDEN", "Seul le donneur d'ordre peut générer le contrat.");
-    }
-    if (offer.status !== "ACCEPTED") {
-      throw new ApiError(409, "OFFER_NOT_ACCEPTED", "Le contrat ne peut être généré qu'à partir d'une offre acceptée.");
+    if ("offerId" in body && body.offerId) {
+      // Marketplace flow — matches the cahier des charges contract
+      // workflow: "modèle → préremplissage → conditions → devis →
+      // acceptation → signature". Only the mission owner can trigger this.
+      const offer = await prisma.missionOffer.findUnique({
+        where: { id: body.offerId },
+        include: { mission: true },
+      });
+      if (!offer) throw new ApiError(404, "OFFER_NOT_FOUND");
+      if (offer.mission.ownerId !== req.user!.id) {
+        throw new ApiError(403, "FORBIDDEN", "Seul le donneur d'ordre peut générer le contrat.");
+      }
+      if (offer.status !== "ACCEPTED") {
+        throw new ApiError(409, "OFFER_NOT_ACCEPTED", "Le contrat ne peut être généré qu'à partir d'une offre acceptée.");
+      }
+      const existing = await prisma.contract.findFirst({
+        where: { missionId: offer.missionId, status: { not: "CANCELLED" } },
+      });
+      if (existing) throw new ApiError(409, "CONTRACT_ALREADY_EXISTS");
+
+      const contract = await prisma.contract.create({
+        data: {
+          missionId: offer.missionId,
+          organizationId: body.organizationId,
+          ownerId: offer.mission.ownerId,
+          counterpartyId: offer.providerId,
+          type: body.type,
+          price: offer.price,
+          terms: body.terms,
+          status: "SENT",
+        },
+      });
+      await logEvent(contract.id, "CREATED", { price: contract.price });
+      res.status(201).json({ contract });
+      return;
     }
 
-    const existing = await prisma.contract.findFirst({
-      where: { missionId: offer.missionId, status: { not: "CANCELLED" } },
+    // Capacity flow — the requester proposes a contract directly to the
+    // organization that published the capacity, at a negotiated price.
+    const capacity = await prisma.transportCapacity.findUnique({
+      where: { id: body.capacityId },
+      include: { organization: true },
     });
-    if (existing) {
-      throw new ApiError(409, "CONTRACT_ALREADY_EXISTS");
+    if (!capacity) throw new ApiError(404, "CAPACITY_NOT_FOUND");
+    if (capacity.status !== "PUBLISHED") throw new ApiError(409, "CAPACITY_NOT_AVAILABLE");
+    if (capacity.organization.ownerId === req.user!.id) {
+      throw new ApiError(400, "CANNOT_CONTRACT_OWN_CAPACITY");
     }
 
     const contract = await prisma.contract.create({
       data: {
-        missionId: offer.missionId,
-        organizationId: body.organizationId,
-        ownerId: offer.mission.ownerId,
-        counterpartyId: offer.providerId,
+        capacityId: capacity.id,
+        organizationId: capacity.organizationId,
+        ownerId: req.user!.id,
+        counterpartyId: capacity.organization.ownerId,
         type: body.type,
-        price: offer.price,
+        price: body.price,
         terms: body.terms,
         status: "SENT",
       },
     });
     await logEvent(contract.id, "CREATED", { price: contract.price });
-
     res.status(201).json({ contract });
   }),
 );
@@ -129,7 +166,9 @@ contractsRouter.post(
     await logEvent(contract.id, isOwner ? "SIGNED_BY_OWNER" : "SIGNED_BY_COUNTERPARTY", { signedAt });
 
     if (willBeFullySigned) {
-      await prisma.mission.update({ where: { id: contract.missionId }, data: { status: "CONFIRMED" } });
+      if (contract.missionId) {
+        await prisma.mission.update({ where: { id: contract.missionId }, data: { status: "CONFIRMED" } });
+      }
       await logEvent(contract.id, "FULLY_SIGNED", { signedAt });
     }
 

@@ -8,6 +8,7 @@ const ownerAgent = request.agent(app);
 const carrierAgent = request.agent(app);
 
 let organizationId: string;
+let capacityId: string;
 let missionId: string;
 let offerId: string;
 let contractId: string;
@@ -74,11 +75,32 @@ describe("organizations & capacities", () => {
       availableFrom: "2026-09-10",
     });
     expect(res.status).toBe(201);
+    capacityId = res.body.capacity.id;
 
     const list = await request(app).get("/api/capacities").query({ zone: "France" });
     expect(list.body.capacities.some((c: { organizationId: string }) => c.organizationId === organizationId)).toBe(
       true,
     );
+  });
+});
+
+describe("contracts from a capacity (louer sa capacité)", () => {
+  it("blocks the capacity owner from contracting their own capacity", async () => {
+    const res = await carrierAgent.post("/api/contracts").send({ capacityId, price: 800 });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe("CANNOT_CONTRACT_OWN_CAPACITY");
+  });
+
+  it("lets a requester open a contract directly from a published capacity, at a negotiated price", async () => {
+    const res = await ownerAgent.post("/api/contracts").send({ capacityId, price: 950, terms: "3 mois renouvelable" });
+    expect(res.status).toBe(201);
+    expect(res.body.contract.status).toBe("SENT");
+    expect(res.body.contract.price).toBe(950);
+    expect(res.body.contract.capacityId).toBe(capacityId);
+    expect(res.body.contract.counterpartyId).toBeTruthy();
+
+    const bothSignedOk = await ownerAgent.post(`/api/contracts/${res.body.contract.id}/sign`);
+    expect(bothSignedOk.status).toBe(200);
   });
 });
 

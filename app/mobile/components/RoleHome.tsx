@@ -16,10 +16,10 @@ const QUICK_ACTIONS_BY_ROLE: Record<string, QuickAction[]> = {
     { icon: "📄", title: "Contrats & signature", sub: "Signature électronique", href: "/contrats" },
   ],
   PARTICULIER: [
-    { icon: "📦", title: "Publier une mission", sub: "Envoyer un colis", href: "/publier" },
+    { icon: "📮", title: "Envoyer un colis", sub: "Suivi, douane, dernier km", href: "/expeditions" },
+    { icon: "📦", title: "Publier une mission", sub: "Marchandises, palettes", href: "/publier" },
     { icon: "🔎", title: "Rechercher une mission", sub: "Comparer les prestataires", href: "/(tabs)/missions" },
     { icon: "📋", title: "Mes missions", sub: "Suivre mes publications", href: "/mes-missions" },
-    { icon: "🤝", title: "Trouver un prestataire", sub: "Transporteurs, logisticiens…", href: "/(tabs)/missions" },
   ],
   PROFESSIONNEL: [
     { icon: "🏢", title: "Mon entreprise", sub: "Profil et activité", href: "/mon-entreprise" },

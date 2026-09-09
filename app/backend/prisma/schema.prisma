@@ -130,17 +130,24 @@ model TransportCapacity {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
+  contracts Contract[]
+
   @@index([status])
   @@index([zone, vehicleType])
 }
 
-// Generated from an accepted mission offer. Signature here is an internal
-// click-to-sign audit trail, NOT a qualified electronic signature — see
-// src/utils/signature.ts and CONTRACTS.md caveat surfaced in the API/UI.
+// Generated either from an accepted mission offer OR directly from a
+// published TransportCapacity ("louer sa capacité" — cahier des charges
+// §16/§25). Exactly one of missionId/capacityId is set; enforced in
+// src/routes/contracts.routes.ts, not at the schema level. Signature here
+// is an internal click-to-sign audit trail, NOT a qualified electronic
+// signature — see src/utils/signature.ts.
 model Contract {
   id                   String    @id @default(cuid())
-  missionId            String
-  mission              Mission   @relation(fields: [missionId], references: [id])
+  missionId            String?
+  mission              Mission?  @relation(fields: [missionId], references: [id])
+  capacityId           String?
+  capacity             TransportCapacity? @relation(fields: [capacityId], references: [id])
   organizationId       String?
   organization         Organization? @relation(fields: [organizationId], references: [id])
   ownerId              String
@@ -161,6 +168,7 @@ model Contract {
 
   @@index([ownerId])
   @@index([counterpartyId])
+  @@index([capacityId])
 }
 
 model ContractEvent {
