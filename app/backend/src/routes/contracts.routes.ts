@@ -135,11 +135,20 @@ contractsRouter.get(
   }),
 );
 
+const signSchema = z.object({
+  // JSON stroke list captured on the signature pad, and the explicit
+  // "j'accepte les conditions générales" tick. Both are recorded in the
+  // audit trail; neither turns this into a qualified e-signature.
+  signaturePath: z.string().max(200000).optional(),
+  acceptedTerms: z.boolean().optional(),
+});
+
 // Internal click-to-sign — see src/utils/signature.ts for the legal caveat.
 contractsRouter.post(
   "/:id/sign",
   requireAuth,
   asyncHandler(async (req, res) => {
+    const signBody = signSchema.parse(req.body ?? {});
     const contract = await requireParty(req.params.id, req.user!.id);
     if (contract.status === "FULLY_SIGNED" || contract.status === "CANCELLED") {
       throw new ApiError(409, "CONTRACT_NOT_SIGNABLE");
@@ -159,11 +168,17 @@ contractsRouter.post(
     const updated = await prisma.contract.update({
       where: { id: contract.id },
       data: {
-        ...(isOwner ? { ownerSignedAt: signedAt } : { counterpartySignedAt: signedAt }),
+        ...(isOwner
+          ? { ownerSignedAt: signedAt, ownerSignaturePath: signBody.signaturePath }
+          : { counterpartySignedAt: signedAt, counterpartySignaturePath: signBody.signaturePath }),
         status: willBeFullySigned ? "FULLY_SIGNED" : "PARTIALLY_SIGNED",
       },
     });
-    await logEvent(contract.id, isOwner ? "SIGNED_BY_OWNER" : "SIGNED_BY_COUNTERPARTY", { signedAt });
+    await logEvent(contract.id, isOwner ? "SIGNED_BY_OWNER" : "SIGNED_BY_COUNTERPARTY", {
+      signedAt,
+      acceptedTerms: signBody.acceptedTerms ?? false,
+      handwritten: Boolean(signBody.signaturePath),
+    });
 
     if (willBeFullySigned) {
       if (contract.missionId) {

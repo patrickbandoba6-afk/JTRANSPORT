@@ -37,6 +37,10 @@ model User {
   shipments               Shipment[] @relation("ShipmentOwner")
   invoicesAsIssuer        Invoice[]  @relation("InvoiceIssuer")
   invoicesAsRecipient     Invoice[]  @relation("InvoiceRecipient")
+  conversations           ConversationParticipant[] @relation("ConversationParticipantUser")
+  messagesSent            Message[]  @relation("MessageSender")
+  roundsAsDriver          DeliveryRound[] @relation("RoundDriver")
+  roundsCreated           DeliveryRound[] @relation("RoundDispatcher")
 }
 
 model Mission {
@@ -55,9 +59,10 @@ model Mission {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  offers    MissionOffer[]
-  events    MissionEvent[]
-  contracts Contract[]
+  offers        MissionOffer[]
+  events        MissionEvent[]
+  contracts     Contract[]
+  conversations Conversation[]
 
   @@index([status])
   @@index([fromCity, toCity])
@@ -162,6 +167,11 @@ model Contract {
   status               String    @default("DRAFT") // DRAFT | SENT | PARTIALLY_SIGNED | FULLY_SIGNED | CANCELLED
   ownerSignedAt        DateTime?
   counterpartySignedAt DateTime?
+  // Hand-drawn signature strokes (JSON point list), captured on the
+  // signature pad. Part of the internal audit trail — still not a
+  // qualified electronic signature (see src/utils/signature.ts).
+  ownerSignaturePath        String?
+  counterpartySignaturePath String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
@@ -373,4 +383,102 @@ model InvoiceLine {
   amount      Float
 
   @@index([invoiceId])
+}
+
+// In-app messaging (cahier des charges §8/§12). This is the channel that
+// lets a particulier and a professional talk without exposing personal
+// phone numbers or addresses: contact details stay private, the
+// conversation carries the exchange. A conversation can be attached to a
+// mission for context.
+model Conversation {
+  id        String   @id @default(cuid())
+  subject   String?
+  missionId String?
+  mission   Mission? @relation(fields: [missionId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([missionId])
+}
+
+model ConversationParticipant {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  userId         String
+  user           User     @relation("ConversationParticipantUser", fields: [userId], references: [id])
+  lastReadAt     DateTime?
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  senderId       String
+  sender         User     @relation("MessageSender", fields: [senderId], references: [id])
+  body           String
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId])
+}
+
+// Dispatcher / last-mile (cahier des charges §17). A dispatcher builds a
+// round, assigns it to one of their drivers, and the driver works through
+// the ordered stops from the JTransport Driver screens. Every scan and
+// status change is written as a RoundStopEvent so the timeline is real,
+// never reconstructed after the fact.
+model DeliveryRound {
+  id           String   @id @default(cuid())
+  reference    String   @unique // e.g. TRN-2026-0001
+  dispatcherId String
+  dispatcher   User     @relation("RoundDispatcher", fields: [dispatcherId], references: [id])
+  driverId     String?
+  driver       User?    @relation("RoundDriver", fields: [driverId], references: [id])
+  date         DateTime
+  status       String   @default("PLANNED") // PLANNED | ASSIGNED | IN_PROGRESS | COMPLETED | CANCELLED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  stops RoundStop[]
+
+  @@index([dispatcherId])
+  @@index([driverId])
+  @@index([status])
+}
+
+model RoundStop {
+  id          String   @id @default(cuid())
+  roundId     String
+  round       DeliveryRound @relation(fields: [roundId], references: [id])
+  position    Int
+  label       String // e.g. "Paris 75001"
+  address     String
+  parcelCode  String? // barcode/QR scanned by the driver
+  recipient   String?
+  status      String   @default("PENDING") // PENDING | IN_PROGRESS | DELIVERED | FAILED
+  podSignature String? // hand-drawn proof-of-delivery strokes (JSON)
+  podNote     String?
+  failureReason String?
+  completedAt DateTime?
+
+  events RoundStopEvent[]
+
+  @@index([roundId])
+}
+
+model RoundStopEvent {
+  id        String   @id @default(cuid())
+  stopId    String
+  stop      RoundStop @relation(fields: [stopId], references: [id])
+  type      String // SCANNED | IN_PROGRESS | DELIVERED | FAILED
+  data      String?
+  createdAt DateTime @default(now())
+
+  @@index([stopId])
 }

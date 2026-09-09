@@ -5,7 +5,14 @@
 // "Quel type de compte" step) even though their dedicated dashboards are
 // later phases — the role exists on the account from day one so nothing
 // needs re-registering once those modules land.
-export const ROLES = ["PARTICULIER", "PROFESSIONNEL", "TRANSPORTEUR", "DISPATCHER", "ADMIN"] as const;
+export const ROLES = [
+  "PARTICULIER",
+  "PROFESSIONNEL",
+  "TRANSPORTEUR",
+  "DISPATCHER",
+  "CHAUFFEUR",
+  "ADMIN",
+] as const;
 export type Role = (typeof ROLES)[number];
 
 // Self-registration must never allow choosing ADMIN — that role is granted
