@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { API_URL, type TransportCapacity } from "../../lib/api";
+import { RequestContractButton } from "../../components/RequestContractButton";
 
 async function getCapacities(): Promise<TransportCapacity[]> {
   try {
@@ -36,6 +37,7 @@ export default async function CapacitesPage() {
             <p className="muted">Zone : {c.zone}</p>
             <p className="muted">Capacité : {c.weightCapacityKg} kg{c.volumeCapacityM3 ? ` · ${c.volumeCapacityM3} m³` : ""}</p>
             <p className="muted">Disponible à partir du {new Date(c.availableFrom).toLocaleDateString("fr-FR")}</p>
+            <RequestContractButton capacityId={c.id} />
           </article>
         ))}
       </div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../lib/auth-context";
 import { apiFetch, type Organization } from "../../lib/api";
+import { DocumentsPanel } from "../../components/DocumentsPanel";
 
 const ACTIVITIES: { value: string; label: string }[] = [
   { value: "MARCHANDISES", label: "Transport de marchandises" },
@@ -182,6 +183,14 @@ function OrganizationCard({ organization, onCapacityAdded }: { organization: Org
           {submitting ? "Publication…" : "+ Publier une capacité"}
         </button>
       </form>
+
+      <div style={{ marginTop: 20 }}>
+        <p className="muted">
+          Licences, agréments et justificatifs de capacité professionnelle — utiles pour travailler avec de grandes
+          structures qui exigent une vérification documentaire.
+        </p>
+        <DocumentsPanel dossierType="ORGANIZATION" dossierId={organization.id} />
+      </div>
     </article>
   );
 }

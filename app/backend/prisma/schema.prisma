@@ -35,6 +35,8 @@ model User {
   contractsAsCounterparty Contract[] @relation("ContractCounterparty")
   documents               Document[] @relation("DocumentOwner")
   shipments               Shipment[] @relation("ShipmentOwner")
+  invoicesAsIssuer        Invoice[]  @relation("InvoiceIssuer")
+  invoicesAsRecipient     Invoice[]  @relation("InvoiceRecipient")
 }
 
 model Mission {
@@ -165,6 +167,7 @@ model Contract {
 
   events    ContractEvent[]
   documents Document[]
+  invoices  Invoice[]
 
   @@index([ownerId])
   @@index([counterpartyId])
@@ -323,4 +326,51 @@ model CustomsCase {
   updatedAt      DateTime @updatedAt
 
   @@index([shipmentId])
+}
+
+// Invoice generated from a FULLY_SIGNED contract (cahier des charges §16/20).
+// eInvoicingStatus/eInvoicingProvider record whether a real electronic-
+// invoicing platform actually transmitted it — see src/utils/einvoicing.ts.
+// Never claim Chorus Pro/Peppol/PDP transmission happened unless a real
+// adapter call succeeded; the internal default adapter never sets more than
+// "NOT_TRANSMITTED".
+model Invoice {
+  id                String   @id @default(cuid())
+  number            String   @unique // e.g. JT-2026-000123
+  contractId        String
+  contract          Contract @relation(fields: [contractId], references: [id])
+  issuerId          String
+  issuer            User     @relation("InvoiceIssuer", fields: [issuerId], references: [id])
+  recipientId       String
+  recipient         User     @relation("InvoiceRecipient", fields: [recipientId], references: [id])
+  status            String   @default("DRAFT") // DRAFT | SENT | PAID | OVERDUE | CANCELLED
+  currency          String   @default("EUR")
+  subtotal          Float
+  taxRate           Float    @default(0)
+  taxAmount         Float    @default(0)
+  total             Float
+  dueDate           DateTime?
+  paidAt            DateTime?
+  eInvoicingStatus  String   @default("NOT_TRANSMITTED") // NOT_TRANSMITTED | TRANSMITTED | FAILED
+  eInvoicingProvider String? // set only once a real adapter is configured and used
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  lines InvoiceLine[]
+
+  @@index([issuerId])
+  @@index([recipientId])
+  @@index([contractId])
+}
+
+model InvoiceLine {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id])
+  description String
+  quantity    Float   @default(1)
+  unitPrice   Float
+  amount      Float
+
+  @@index([invoiceId])
 }

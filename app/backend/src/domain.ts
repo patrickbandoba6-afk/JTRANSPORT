@@ -69,6 +69,7 @@ export const DOCUMENT_TYPES = [
   "BON_LIVRAISON",
   "POD",
   "CONTRAT",
+  "LICENCE",
   "ASSURANCE",
   "DOUANE",
   "AUTRE",
@@ -125,3 +126,6 @@ export const CUSTOMS_STATUSES = [
   "BLOCKED",
 ] as const;
 export type CustomsStatus = (typeof CUSTOMS_STATUSES)[number];
+
+export const INVOICE_STATUSES = ["DRAFT", "SENT", "PAID", "OVERDUE", "CANCELLED"] as const;
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
