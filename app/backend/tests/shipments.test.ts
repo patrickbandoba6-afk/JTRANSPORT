@@ -33,8 +33,13 @@ beforeAll(async () => {
   // Self-registration can never grant ADMIN — promote directly via Prisma,
   // simulating the out-of-band process a real admin-invite flow would use.
   const { PrismaClient } = await import("@prisma/client");
+  const { DEFAULT_CUSTOMS_REQUIREMENTS } = await import("../src/data/customsRequirements.js");
   const prisma = new PrismaClient();
   await prisma.user.update({ where: { id: adminRegister.body.user.id }, data: { role: "ADMIN" } });
+  // Reference data the app expects to exist (normally loaded by the seed).
+  if ((await prisma.customsRequirement.count()) === 0) {
+    for (const r of DEFAULT_CUSTOMS_REQUIREMENTS) await prisma.customsRequirement.create({ data: r });
+  }
   await prisma.$disconnect();
   // Re-login so the session token carries the promoted role.
   await adminAgent.post("/api/auth/login").send({ email: "ship-admin@jtransport.test", password: "password123" });
@@ -150,6 +155,44 @@ describe("shipments", () => {
     expect(res.status).toBe(200);
     expect(res.body.customsCase.status).toBe("UNDER_REVIEW");
     expect(res.body.customsCase.estimatedFees).toBe(45.5);
+  });
+
+  it("carries a transport mode and a cargo type, vehicles included", async () => {
+    const res = await clientAgent.post("/api/shipments").send({
+      originCity: "Marseille",
+      originCountry: "FR",
+      destinationCity: "Abidjan",
+      destinationCountry: "CI",
+      recipientName: "Koffi",
+      recipientAddress: "Rue du Port, Abidjan",
+      mode: "MARITIME",
+      cargoType: "VEHICULE",
+      vehicles: [{ make: "Peugeot", model: "208", year: 2019, vin: "VF3XXXXXXXX", condition: "ROULANT" }],
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.shipment.mode).toBe("MARITIME");
+    expect(res.body.shipment.vehicles.length).toBe(1);
+
+    // A maritime vehicle export asks for the B/L and the vehicle papers.
+    const reqs = await clientAgent.get(`/api/shipments/${res.body.shipment.id}/requirements`);
+    expect(reqs.status).toBe(200);
+    const labels = reqs.body.checklist.map((c: { label: string }) => c.label);
+    expect(labels).toContain("Connaissement maritime (B/L)");
+    expect(labels).toContain("Carte grise / certificat d'immatriculation");
+    expect(labels).not.toContain("Lettre de transport aérien (AWB)");
+    expect(reqs.body.missingMandatory).toBeGreaterThan(0);
+    expect(reqs.body.international).toBe(true);
+  });
+
+  it("keeps an estimate and an officially notified customs amount apart", async () => {
+    const res = await adminAgent.patch(`/api/shipments/${shipmentId}/customs-case`).send({
+      officialFees: 512.4,
+      feesStatus: "OFFICIAL",
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.customsCase.estimatedFees).toBe(45.5);
+    expect(res.body.customsCase.officialFees).toBe(512.4);
+    expect(res.body.customsCase.feesStatus).toBe("OFFICIAL");
   });
 
   it("lists the client's own shipments", async () => {

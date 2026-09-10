@@ -259,6 +259,10 @@ model Shipment {
   recipientPhone    String?
   recipientEmail    String?
   recipientAddress  String
+  // How it travels and what it carries — drives the customs paperwork
+  // checklist (see CustomsRequirement).
+  mode              String   @default("ROUTIER") // ROUTIER | MARITIME | AERIEN | FERROVIAIRE | MULTIMODAL
+  cargoType         String   @default("COLIS") // COLIS | MARCHANDISE | VEHICULE | CONTENEUR
   status            String   @default("CREATED")
   // CREATED | COLLECTED | AT_WAREHOUSE | GROUPED | IN_CONTAINER | LOADED |
   // DEPARTED | IN_TRANSIT | ARRIVED | CUSTOMS | CUSTOMS_CLEARED |
@@ -271,6 +275,7 @@ model Shipment {
   parcels     Parcel[]
   events      TrackingEvent[]
   customsCase CustomsCase?
+  vehicles    ShipmentVehicle[]
 
   @@index([ownerId])
   @@index([status])
@@ -411,11 +416,53 @@ model CustomsCase {
   declaredValue  Float?
   hsCode         String?
   incoterm       String?
+  // An estimate and an officially notified amount are two different things
+  // and are never merged (cahier des charges §13/§31). officialFees is only
+  // ever filled from an amount actually notified by the authority or the
+  // customs broker handling the file.
   estimatedFees  Float?
+  officialFees   Float?
+  feesStatus     String   @default("NONE") // NONE | ESTIMATED | OFFICIAL | PAID
+  feesPaidAt     DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@index([shipmentId])
+}
+
+// Vehicle being shipped (car, motorcycle, van, truck…). Kept separate from
+// parcels because customs and carriers ask for different paperwork.
+model ShipmentVehicle {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id])
+  make       String
+  model      String
+  year       Int?
+  vin        String?
+  plate      String?
+  condition  String? // ROULANT | NON_ROULANT | ACCIDENTE
+  valueDeclared Float?
+
+  @@index([shipmentId])
+}
+
+// Paperwork checklist per transport mode / cargo type / country pair.
+// Deliberately a table and not a hardcoded list: customs rules change and
+// differ by country, so they must stay configurable (cahier des charges
+// §26/§36) and are shown as indicative, never as legal advice.
+model CustomsRequirement {
+  id           String  @id @default(cuid())
+  mode         String? // null = applies to every mode
+  cargoType    String? // null = applies to every cargo type
+  countryFrom  String?
+  countryTo    String?
+  documentType String // matches DOCUMENT_TYPES where possible
+  label        String
+  mandatory    Boolean @default(true)
+  note         String?
+
+  @@index([mode, cargoType])
 }
 
 // Invoice generated from a FULLY_SIGNED contract (cahier des charges §16/20).

@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../src/utils/password.js";
+import { DEFAULT_CUSTOMS_REQUIREMENTS } from "../src/data/customsRequirements.js";
 
 const prisma = new PrismaClient();
 
@@ -56,7 +57,19 @@ async function main() {
     },
   });
 
-  console.log("Seed complete:", { owner: owner.email, carrier: carrier.email, admin: admin.email });
+  const existingRequirements = await prisma.customsRequirement.count();
+  if (existingRequirements === 0) {
+    for (const r of DEFAULT_CUSTOMS_REQUIREMENTS) {
+      await prisma.customsRequirement.create({ data: r });
+    }
+  }
+
+  console.log("Seed complete:", {
+    owner: owner.email,
+    carrier: carrier.email,
+    admin: admin.email,
+    customsRequirements: existingRequirements === 0 ? DEFAULT_CUSTOMS_REQUIREMENTS.length : existingRequirements,
+  });
 }
 
 main()

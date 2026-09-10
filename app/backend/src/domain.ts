@@ -188,6 +188,15 @@ export const CONTAINER_STATUSES = [
 ] as const;
 export type ContainerStatus = (typeof CONTAINER_STATUSES)[number];
 
+export const TRANSPORT_MODES = ["ROUTIER", "MARITIME", "AERIEN", "FERROVIAIRE", "MULTIMODAL"] as const;
+export type TransportMode = (typeof TRANSPORT_MODES)[number];
+
+export const CARGO_TYPES = ["COLIS", "MARCHANDISE", "VEHICULE", "CONTENEUR"] as const;
+export type CargoType = (typeof CARGO_TYPES)[number];
+
+export const CUSTOMS_FEES_STATUSES = ["NONE", "ESTIMATED", "OFFICIAL", "PAID"] as const;
+export type CustomsFeesStatus = (typeof CUSTOMS_FEES_STATUSES)[number];
+
 export const CUSTOMS_STATUSES = [
   "DOCUMENTS_PENDING",
   "SUBMITTED",

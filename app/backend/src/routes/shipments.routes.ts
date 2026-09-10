@@ -3,7 +3,13 @@ import { z } from "zod";
 import { prisma } from "../db.js";
 import { asyncHandler, ApiError } from "../middleware/error.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
-import { SHIPMENT_STATUSES, CUSTOMS_STATUSES } from "../domain.js";
+import {
+  SHIPMENT_STATUSES,
+  CUSTOMS_STATUSES,
+  TRANSPORT_MODES,
+  CARGO_TYPES,
+  CUSTOMS_FEES_STATUSES,
+} from "../domain.js";
 import { newParcelCode } from "../utils/parcelCode.js";
 
 export const shipmentsRouter = Router();
@@ -17,17 +23,34 @@ const parcelSchema = z.object({
   declaredValue: z.coerce.number().positive().optional(),
 });
 
-const createShipmentSchema = z.object({
-  originCity: z.string().min(1),
-  originCountry: z.string().min(1),
-  destinationCity: z.string().min(1),
-  destinationCountry: z.string().min(1),
-  recipientName: z.string().min(1),
-  recipientPhone: z.string().optional(),
-  recipientEmail: z.string().email().optional(),
-  recipientAddress: z.string().min(1),
-  parcels: z.array(parcelSchema).min(1),
+const vehicleSchema = z.object({
+  make: z.string().min(1),
+  model: z.string().min(1),
+  year: z.coerce.number().int().min(1900).max(2100).optional(),
+  vin: z.string().optional(),
+  plate: z.string().optional(),
+  condition: z.string().optional(),
+  valueDeclared: z.coerce.number().positive().optional(),
 });
+
+const createShipmentSchema = z
+  .object({
+    originCity: z.string().min(1),
+    originCountry: z.string().min(1),
+    destinationCity: z.string().min(1),
+    destinationCountry: z.string().min(1),
+    recipientName: z.string().min(1),
+    recipientPhone: z.string().optional(),
+    recipientEmail: z.string().email().optional(),
+    recipientAddress: z.string().min(1),
+    mode: z.enum(TRANSPORT_MODES).default("ROUTIER"),
+    cargoType: z.enum(CARGO_TYPES).default("COLIS"),
+    parcels: z.array(parcelSchema).default([]),
+    vehicles: z.array(vehicleSchema).default([]),
+  })
+  .refine((b) => b.parcels.length > 0 || b.vehicles.length > 0, {
+    message: "Indiquez au moins un colis ou un véhicule à transporter.",
+  });
 
 const addEventSchema = z.object({
   type: z.enum(SHIPMENT_STATUSES),
@@ -41,6 +64,10 @@ const updateCustomsSchema = z.object({
   hsCode: z.string().optional(),
   incoterm: z.string().optional(),
   estimatedFees: z.coerce.number().positive().optional(),
+  // Only ever set from an amount actually notified by the authority or the
+  // customs broker — never computed by JTransport.
+  officialFees: z.coerce.number().positive().optional(),
+  feesStatus: z.enum(CUSTOMS_FEES_STATUSES).optional(),
 });
 
 async function requireOwnerOrAdmin(shipmentId: string, userId: string, role: string) {
@@ -69,13 +96,16 @@ shipmentsRouter.post(
         recipientPhone: body.recipientPhone,
         recipientEmail: body.recipientEmail,
         recipientAddress: body.recipientAddress,
+        mode: body.mode,
+        cargoType: body.cargoType,
         parcels: { create: body.parcels.map((p) => ({ ...p, code: newParcelCode() })) },
+        vehicles: { create: body.vehicles },
         events: { create: { type: "CREATED" } },
         ...(body.originCountry.toUpperCase() !== body.destinationCountry.toUpperCase()
           ? { customsCase: { create: {} } }
           : {}),
       },
-      include: { parcels: true, customsCase: true },
+      include: { parcels: true, customsCase: true, vehicles: true },
     });
 
     res.status(201).json({ shipment });
@@ -106,10 +136,52 @@ shipmentsRouter.get(
         parcels: true,
         container: true,
         customsCase: true,
+        vehicles: true,
         events: { orderBy: { createdAt: "asc" } },
       },
     });
     res.json({ shipment });
+  }),
+);
+
+// The paperwork checklist for this shipment: which documents its mode /
+// cargo / country pair calls for, and which ones are already in the vault.
+// Indicative only — customs rules are configurable data, not legal advice.
+shipmentsRouter.get(
+  "/:id/requirements",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const shipment = await requireOwnerOrAdmin(req.params.id, req.user!.id, req.user!.role);
+
+    const requirements = await prisma.customsRequirement.findMany({
+      where: {
+        AND: [
+          { OR: [{ mode: null }, { mode: shipment.mode }] },
+          { OR: [{ cargoType: null }, { cargoType: shipment.cargoType }] },
+          { OR: [{ countryFrom: null }, { countryFrom: shipment.originCountry.toUpperCase() }] },
+          { OR: [{ countryTo: null }, { countryTo: shipment.destinationCountry.toUpperCase() }] },
+        ],
+      },
+      orderBy: [{ mandatory: "desc" }, { label: "asc" }],
+    });
+
+    const documents = await prisma.document.findMany({
+      where: { dossierType: "SHIPMENT", dossierId: shipment.id, status: "ACTIVE" },
+      select: { id: true, type: true, filename: true },
+    });
+    const providedTypes = new Set(documents.map((d) => d.type));
+
+    const checklist = requirements.map((r) => ({
+      ...r,
+      provided: providedTypes.has(r.documentType),
+    }));
+
+    res.json({
+      checklist,
+      missingMandatory: checklist.filter((c) => c.mandatory && !c.provided).length,
+      documents,
+      international: shipment.originCountry.toUpperCase() !== shipment.destinationCountry.toUpperCase(),
+    });
   }),
 );
 
