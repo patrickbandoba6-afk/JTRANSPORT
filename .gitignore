@@ -1,11 +1,54 @@
+# Dépendances
 node_modules/
-.next/
-dist/
+npm-debug.log
+yarn-error.log
+
+# Environnement
 .env
 .env.local
-*.log
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build
+dist/
+build/
+.next/
+out/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Prisma
 prisma/dev.db
 prisma/dev.db-journal
-prisma/test.db
-prisma/test.db-journal
+prisma/test*.db
+prisma/test*.db-journal
+
+# Mobile/Expo
 .expo/
+.expo-shared/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+logs/
+*.log

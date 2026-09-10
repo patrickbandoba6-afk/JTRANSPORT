@@ -1,22 +1,63 @@
-# JTransport ‚Äî Master Final Unique
+# JTransport - Plateforme de Transport et Logistique
 
-Ce package regroupe les travaux JTransport r√©alis√©s pr√©c√©demment dans un seul projet.
+JTransport est une application mobile complËte de marketplace pour tous les domaines du transport et de la logistique.
 
-## Source de v√©rit√©
-Lire en premier : `CAHIER_DES_CHARGES_JTRANSPORT_FINAL_UNIQUE.md`
+## ?? FonctionnalitÈs Principales
 
-## Code
-- `app/web/` : socle web Next.js/TypeScript
-- `app/mobile/` : socle mobile Expo/React Native/TypeScript
-- `app/backend/` : notes de d√©marrage backend
-- `app/specs/` : contrats JSON techniques
+### ?? Gestion des Colis et Envois
+- CrÈation et suivi de colis avec codes de suivi uniques
+- Modes : Routier, Maritime, AÈrien, Ferroviaire, Multimodal
+- Types de cargo : Colis, Marchandise, VÈhicules, Conteneurs
+- Historique immuable avec traÁabilitÈ complËte
 
-## Design
-Les r√©f√©rences conserv√©es sont exclusivement JTransport/transport/logistique.
+### ?? Douane et International
+- Configuration flexible des exigences douaniËres
+- Gestion des frais (estimÈs vs officiels)
+- Support des codes HS et incoterms
 
-## R√®gle
-Le socle fourni n'est pas consid√©r√© comme une application production termin√©e. Claude doit impl√©menter le backend, la base de donn√©es, l'authentification, les permissions, les API, les paiements, le tracking, les documents, la douane, les contrats, la facturation, la messagerie, le dispatch, les tests et les int√©grations conform√©ment au cahier ma√Ætre.
+### ?? Gestion des Utilisateurs
+- 3 types de comptes : Particulier, Professionnel/Entreprise, Transporteur
+- RÙles : Administrateur, Dispatcher, Chauffeur
+- Authentification JWT sÈcurisÈe
+- RBAC (Role-Based Access Control)
 
-## R√©f√©rences visuelles approuv√©es
+## ?? Stack Technologique
 
-Les r√©f√©rences les plus r√©centes fournies par le client sont dans `app/design/reference-images/approved-current/`. Elles couvrent l'accueil, les missions, le d√©tail mission, la publication et le profil transporteur. Elles servent de r√©f√©rence UX/UI et toutes les actions doivent √™tre fonctionnelles, pas seulement graphiques.
+**Frontend:** React Native + Expo + TypeScript
+**Backend:** Node.js + Express + Prisma + SQLite
+**Testing:** Vitest + Supertest
+
+## ?? Installation
+
+### Backend
+```bash
+cd app/backend
+npm install
+npx prisma db push
+npm run dev
+```
+
+### Mobile
+```bash
+cd app/mobile
+npm install
+npx expo start
+```
+
+## ?? Tests
+```bash
+cd app/backend
+npm test
+```
+? 88 tests passants
+
+## ?? SÈcuritÈ
+- JWT authentification
+- RBAC
+- Validation cÙtÈ serveur
+- Historique immuable
+
+## ?? Contact
+patrickbandoba6@gmail.com
+
+**Statut :** ?? En dÈveloppement actif
