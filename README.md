@@ -1,24 +1,24 @@
 # JTransport - Plateforme de Transport et Logistique
 
-JTransport est une application mobile complète de marketplace pour tous les domaines du transport et de la logistique.
+JTransport est une application mobile complï¿½te de marketplace pour tous les domaines du transport et de la logistique.
 
-## ?? Fonctionnalités Principales
+## ?? Fonctionnalitï¿½s Principales
 
 ### ?? Gestion des Colis et Envois
-- Création et suivi de colis avec codes de suivi uniques
-- Modes : Routier, Maritime, Aérien, Ferroviaire, Multimodal
-- Types de cargo : Colis, Marchandise, Véhicules, Conteneurs
-- Historique immuable avec traçabilité complète
+- Crï¿½ation et suivi de colis avec codes de suivi uniques
+- Modes : Routier, Maritime, Aï¿½rien, Ferroviaire, Multimodal
+- Types de cargo : Colis, Marchandise, Vï¿½hicules, Conteneurs
+- Historique immuable avec traï¿½abilitï¿½ complï¿½te
 
 ### ?? Douane et International
-- Configuration flexible des exigences douanières
-- Gestion des frais (estimés vs officiels)
+- Configuration flexible des exigences douaniï¿½res
+- Gestion des frais (estimï¿½s vs officiels)
 - Support des codes HS et incoterms
 
 ### ?? Gestion des Utilisateurs
 - 3 types de comptes : Particulier, Professionnel/Entreprise, Transporteur
-- Rôles : Administrateur, Dispatcher, Chauffeur
-- Authentification JWT sécurisée
+- Rï¿½les : Administrateur, Dispatcher, Chauffeur
+- Authentification JWT sï¿½curisï¿½e
 - RBAC (Role-Based Access Control)
 
 ## ?? Stack Technologique
@@ -51,13 +51,19 @@ npm test
 ```
 ? 88 tests passants
 
-## ?? Sécurité
+## ?? Sï¿½curitï¿½
 - JWT authentification
 - RBAC
-- Validation côté serveur
+- Validation cï¿½tï¿½ serveur
 - Historique immuable
 
 ## ?? Contact
 patrickbandoba6@gmail.com
 
-**Statut :** ?? En développement actif
+**Statut :** ?? En dï¿½veloppement actif
+
+## Sauvegarde automatique
+
+Toute modification faite sur ce projet via l'assistant est automatiquement
+committÃ©e et poussÃ©e sur ce dÃ©pÃ´t GitHub (`origin/main`) â€” aucune action
+manuelle n'est nÃ©cessaire pour que les nouveautÃ©s soient enregistrÃ©es ici.
