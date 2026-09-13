@@ -43,6 +43,11 @@ model User {
   roundsCreated           DeliveryRound[] @relation("RoundDispatcher")
   organizationMemberships OrganizationMember[] @relation("OrganizationMemberUser")
   incidentsOpened         Incident[] @relation("IncidentOpener")
+  paymentsAsPayer         Payment[]  @relation("PaymentPayer")
+  ratingsGiven            Rating[]   @relation("RatingAuthor")
+  ratingsReceived         Rating[]   @relation("RatingSubject")
+  disputesOpened          Dispute[]  @relation("DisputeOpener")
+  disputeMessages         DisputeMessage[] @relation("DisputeMessageAuthor")
 }
 
 model Mission {
