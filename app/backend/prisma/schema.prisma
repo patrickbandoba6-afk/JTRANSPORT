@@ -188,6 +188,8 @@ model Contract {
   events    ContractEvent[]
   documents Document[]
   invoices  Invoice[]
+  ratings   Rating[]
+  disputes  Dispute[]
 
   @@index([ownerId])
   @@index([counterpartyId])
