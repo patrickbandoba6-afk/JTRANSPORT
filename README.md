@@ -66,4 +66,5 @@ patrickbandoba6@gmail.com
 
 Toute modification faite sur ce projet via l'assistant est automatiquement
 committée et poussée sur ce dépôt GitHub (`origin/main`) — aucune action
-manuelle n'est nécessaire pour que les nouveautés soient enregistrées ici.
+manuelle n'est nécessaire pour que les nouveautés soient enregistrées ici,
+même si l'ordinateur s'éteint juste après.
