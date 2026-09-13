@@ -625,3 +625,145 @@ model RoundStopEvent {
 
   @@index([stopId])
 }
+
+// Payment (cahier des charges §15). See src/utils/payments.ts for the
+// PaymentProviderAdapter seam referenced from invoices.routes.ts. Only
+// WALLET moves real money today (JTransport's own internal ledger, see
+// WalletAccount/WalletEntry below) — CARD honestly reports
+// PROVIDER_NOT_CONFIGURED (no PSP wired in) and VIREMENT stays PENDING
+// until the invoice issuer confirms the wire actually arrived. commission/
+// netAmount are always computed at creation for reconciliation reporting
+// (§16) even on methods that don't move wallet money themselves.
+model Payment {
+  id               String    @id @default(cuid())
+  idempotencyKey   String    @unique
+  payerId          String
+  payer            User      @relation("PaymentPayer", fields: [payerId], references: [id])
+  invoiceId        String?
+  invoice          Invoice?  @relation(fields: [invoiceId], references: [id])
+  purpose          String    @default("TRANSPORT") // see PAYMENT_PURPOSES
+  method           String // CARD | VIREMENT | WALLET
+  amount           Float
+  currency         String    @default("EUR")
+  commissionAmount Float     @default(0)
+  netAmount        Float
+  status           String    @default("PENDING") // see PAYMENT_STATUSES
+  failureReason    String?
+  providerRef      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  refunds       PaymentRefund[]
+  walletEntries WalletEntry[]
+
+  @@index([payerId])
+  @@index([invoiceId])
+  @@index([status])
+}
+
+model PaymentRefund {
+  id        String   @id @default(cuid())
+  paymentId String
+  payment   Payment  @relation(fields: [paymentId], references: [id])
+  amount    Float
+  reason    String?
+  status    String   @default("PENDING_EXTERNAL") // see PAYMENT_REFUND_STATUSES
+  createdAt DateTime @default(now())
+
+  @@index([paymentId])
+}
+
+// One ledger account per holder — a user, or the platform itself via the
+// fixed PLATFORM_WALLET_OWNER_ID. Purely internal money: there is no real
+// bank connection, so a VIREMENT top-up only credits the wallet once an
+// admin confirms the transfer actually arrived (never on request creation)
+// — same honesty rule as Invoice's manual mark-paid.
+model WalletAccount {
+  id        String   @id @default(cuid())
+  ownerType String   @default("USER") // USER | PLATFORM
+  ownerId   String   @unique
+  balance   Float    @default(0)
+  currency  String   @default("EUR")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entries WalletEntry[]
+}
+
+model WalletEntry {
+  id              String        @id @default(cuid())
+  walletAccountId String
+  walletAccount   WalletAccount @relation(fields: [walletAccountId], references: [id])
+  type            String // CREDIT | DEBIT
+  amount          Float
+  balanceAfter    Float
+  reason          String // PAYMENT | REFUND | TOPUP | COMMISSION | REVERSEMENT
+  paymentId       String?
+  payment         Payment?      @relation(fields: [paymentId], references: [id])
+  createdAt       DateTime      @default(now())
+
+  @@index([walletAccountId])
+  @@index([paymentId])
+}
+
+// Post-mission rating (cahier des charges §24). One rating per (contract,
+// author) — you can't rate a deal that never happened, and you can't rate
+// it twice. Moderation fields are only ever set by an administrator.
+model Rating {
+  id          String    @id @default(cuid())
+  contractId  String
+  contract    Contract  @relation(fields: [contractId], references: [id])
+  authorId    String
+  author      User      @relation("RatingAuthor", fields: [authorId], references: [id])
+  subjectId   String
+  subject     User      @relation("RatingSubject", fields: [subjectId], references: [id])
+  score       Int // 1..5
+  comment     String?
+  status      String    @default("PUBLISHED") // see RATING_STATUSES
+  flagReason  String?
+  moderatedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([contractId, authorId])
+  @@index([subjectId])
+  @@index([contractId])
+}
+
+// Dispute / support case (cahier des charges §23), always attached to a
+// contract so the full paper trail (parties, invoices, documents) is
+// reachable from one place. Resolution/refund is a decision an admin
+// records — never inferred automatically.
+model Dispute {
+  id           String    @id @default(cuid())
+  contractId   String
+  contract     Contract  @relation(fields: [contractId], references: [id])
+  openedById   String
+  openedBy     User      @relation("DisputeOpener", fields: [openedById], references: [id])
+  category     String // see DISPUTE_CATEGORIES
+  description  String
+  status       String    @default("OPEN") // see DISPUTE_STATUSES
+  resolution   String?
+  refundAmount Float?
+  resolvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  messages DisputeMessage[]
+
+  @@index([contractId])
+  @@index([openedById])
+  @@index([status])
+}
+
+model DisputeMessage {
+  id            String   @id @default(cuid())
+  disputeId     String
+  dispute       Dispute  @relation(fields: [disputeId], references: [id])
+  authorId      String
+  author        User     @relation("DisputeMessageAuthor", fields: [authorId], references: [id])
+  body          String
+  attachmentUrl String? // photo/document reference
+  createdAt     DateTime @default(now())
+
+  @@index([disputeId])
+}
