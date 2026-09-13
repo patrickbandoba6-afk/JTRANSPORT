@@ -498,7 +498,8 @@ model Invoice {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  lines InvoiceLine[]
+  lines    InvoiceLine[]
+  payments Payment[]
 
   @@index([issuerId])
   @@index([recipientId])
