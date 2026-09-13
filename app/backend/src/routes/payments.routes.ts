@@ -256,8 +256,11 @@ paymentsRouter.post(
       const refund = await prisma.paymentRefund.create({
         data: { paymentId: payment.id, amount: body.amount, reason: body.reason, status: "PENDING_EXTERNAL" },
       });
-      const newStatus = body.amount === remaining ? "PARTIALLY_REFUNDED" : "PARTIALLY_REFUNDED";
-      await prisma.payment.update({ where: { id: payment.id }, data: { status: newStatus } });
+      const fullyRefunded = refundedSoFar + body.amount >= payment.amount;
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: fullyRefunded ? "REFUNDED" : "PARTIALLY_REFUNDED" },
+      });
       return res.status(201).json({ refund });
     }
 
