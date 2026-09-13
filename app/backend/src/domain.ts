@@ -208,3 +208,69 @@ export type CustomsStatus = (typeof CUSTOMS_STATUSES)[number];
 
 export const INVOICE_STATUSES = ["DRAFT", "SENT", "PAID", "OVERDUE", "CANCELLED"] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
+
+// Payment (cahier des charges §15). CARD has no real PSP wired in — see
+// src/utils/payments.ts — and always reports PROVIDER_NOT_CONFIGURED,
+// never a fabricated success. WALLET moves real money inside JTransport's
+// own ledger (WalletAccount/WalletEntry); VIREMENT stays PENDING until the
+// invoice issuer (who actually receives the wire) confirms it arrived.
+export const PAYMENT_METHODS = ["CARD", "VIREMENT", "WALLET"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const PAYMENT_PURPOSES = [
+  "TRANSPORT",
+  "DOUANE",
+  "FRAIS_DOSSIER",
+  "STOCKAGE",
+  "MANUTENTION",
+  "ASSURANCE",
+  "COMMISSION",
+  "AUTRE",
+  "WALLET_TOPUP",
+] as const;
+export type PaymentPurpose = (typeof PAYMENT_PURPOSES)[number];
+
+export const PAYMENT_STATUSES = [
+  "PENDING",
+  "SUCCEEDED",
+  "FAILED",
+  "REFUNDED",
+  "PARTIALLY_REFUNDED",
+] as const;
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+// WALLET refunds move real internal money (SUCCEEDED) or honestly fail if
+// the recipient's wallet can't cover the reversal (FAILED). VIREMENT/CARD
+// refunds are a logged decision only — the actual bank-side reversal
+// happens outside JTransport, so it stays PENDING_EXTERNAL rather than
+// claiming money moved that didn't.
+export const PAYMENT_REFUND_STATUSES = ["SUCCEEDED", "PENDING_EXTERNAL", "FAILED"] as const;
+export type PaymentRefundStatus = (typeof PAYMENT_REFUND_STATUSES)[number];
+
+// Commission JTransport takes on a marketplace payment it actually settles
+// itself (WALLET). VIREMENT/CARD amounts still record commissionAmount for
+// reconciliation reporting, but no wallet money moves for those methods.
+export const PLATFORM_COMMISSION_RATE = 0.08;
+export const PLATFORM_WALLET_OWNER_ID = "PLATFORM";
+
+// Avis et réputation (cahier des charges §24). Only PUBLISHED ratings show
+// up in public averages; FLAGGED/HIDDEN are moderation decisions an admin
+// makes, never automatic.
+export const RATING_STATUSES = ["PUBLISHED", "FLAGGED", "HIDDEN"] as const;
+export type RatingStatus = (typeof RATING_STATUSES)[number];
+
+// Litiges et assistance (cahier des charges §23).
+export const DISPUTE_CATEGORIES = [
+  "RETARD",
+  "DOMMAGE",
+  "COLIS_MANQUANT",
+  "DOUANE",
+  "DOCUMENTAIRE",
+  "PAIEMENT",
+  "DESACCORD_TARIFAIRE",
+  "AUTRE",
+] as const;
+export type DisputeCategory = (typeof DISPUTE_CATEGORIES)[number];
+
+export const DISPUTE_STATUSES = ["OPEN", "UNDER_REVIEW", "RESOLVED", "REJECTED", "CLOSED"] as const;
+export type DisputeStatus = (typeof DISPUTE_STATUSES)[number];
