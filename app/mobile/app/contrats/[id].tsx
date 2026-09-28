@@ -2,11 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 import { colors, radius } from "../../lib/theme";
 import { Button, Card, Tag } from "../../components/ui";
 import { SignaturePad, type Stroke } from "../../components/SignaturePad";
 import { useAuth } from "../../lib/auth-context";
-import { apiFetch, type Contract, type DocumentRecord } from "../../lib/api";
+import { apiFetch, apiUpload, getToken, API_URL, type Contract, type DocumentRecord } from "../../lib/api";
 
 export default function ContratDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
