@@ -1,8 +1,20 @@
+import { useEffect } from "react";
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider } from "../lib/auth-context";
 import { Bootstrap } from "../components/Bootstrap";
 
+// Keeps the native launch screen (app.json "expo-splash-screen" plugin —
+// same splash-1.jpg/background color as Splash.tsx's "logo" phase) up
+// until our own JS Splash has mounted underneath it, so there is no white
+// flash between the native screen and the branded one taking over.
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 export default function RootLayout() {
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
+
   return (
     <AuthProvider>
       <Bootstrap>
