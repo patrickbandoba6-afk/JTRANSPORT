@@ -227,7 +227,9 @@ export default function Home() {
             <Card>
               <Tag label={m.vehicleType} />
               <Text style={styles.missionRoute}>{m.fromCity} → {m.toCity}</Text>
-              <Text style={styles.muted}>{m.cargo} · {m.weightKg} kg</Text>
+              <Text style={styles.muted}>
+                {m.category === "VOYAGEURS" ? `${m.seats} places` : `${m.cargo} · ${m.weightKg} kg`}
+              </Text>
               <Text style={styles.missionPrice}>{m.budget} €</Text>
             </Card>
           </Link>
