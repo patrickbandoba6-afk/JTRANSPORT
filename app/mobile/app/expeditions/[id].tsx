@@ -72,8 +72,26 @@ export default function ExpeditionDetail() {
         </Card>
       )}
 
+      {shipment.events && shipment.events.length > 0 && (
+        <Card>
+          <Text style={styles.h2}>📍 Où se trouve ma marchandise</Text>
+          {(() => {
+            const last = shipment.events![shipment.events!.length - 1];
+            return (
+              <>
+                <Text style={styles.route}>{STATUS_LABELS[last.type] ?? last.type}</Text>
+                <Text style={styles.muted}>
+                  {last.location ? `📌 ${last.location}` : "Position non précisée pour cette étape"}
+                </Text>
+                <Text style={styles.muted}>Mis à jour le {new Date(last.createdAt).toLocaleString("fr-FR")}</Text>
+              </>
+            );
+          })()}
+        </Card>
+      )}
+
       <View>
-        <Text style={styles.h2}>📍 Suivi</Text>
+        <Text style={styles.h2}>📍 Historique du suivi</Text>
         {(!shipment.events || shipment.events.length === 0) && <Text style={styles.muted}>Aucun événement.</Text>}
         {shipment.events?.map((ev) => (
           <View key={ev.id} style={styles.timelineRow}>
