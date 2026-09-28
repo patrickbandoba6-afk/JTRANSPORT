@@ -5,6 +5,7 @@ import { asyncHandler, ApiError } from "../middleware/error.js";
 import { requireAuth } from "../middleware/auth.js";
 import { CONTRACT_TYPES } from "../domain.js";
 import { signatureProvider } from "../utils/signature.js";
+import { generateContractPdf } from "../utils/contractPdf.js";
 
 export const contractsRouter = Router();
 
@@ -189,5 +190,37 @@ contractsRouter.post(
     }
 
     res.json({ contract: updated });
+  }),
+);
+
+// Real-data PDF export — JTransport logo + both parties' names/avatars,
+// price, terms and signature timestamps, nothing fabricated. See
+// src/utils/contractPdf.ts.
+contractsRouter.get(
+  "/:id/pdf",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const contract = await requireParty(req.params.id, req.user!.id);
+    const full = await prisma.contract.findUnique({
+      where: { id: contract.id },
+      include: {
+        owner: { select: { id: true, name: true, email: true } },
+        counterparty: { select: { id: true, name: true, email: true } },
+        mission: { select: { fromCity: true, toCity: true } },
+      },
+    });
+    if (!full) throw new ApiError(404, "CONTRACT_NOT_FOUND");
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="contrat-${full.id}.pdf"`);
+
+    const doc = generateContractPdf({
+      contract: full,
+      owner: full.owner,
+      counterparty: full.counterparty,
+      missionRoute: full.mission,
+    });
+    doc.pipe(res);
+    doc.end();
   }),
 );
