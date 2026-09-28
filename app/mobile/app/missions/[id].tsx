@@ -98,8 +98,12 @@ export default function MissionDetail() {
         <Tag label={mission.vehicleType} />
         <Text style={styles.route}>{mission.fromCity} → {mission.toCity}</Text>
         <Text style={styles.muted}>{new Date(mission.date).toLocaleDateString("fr-FR")}</Text>
-        <Text style={styles.muted}>{mission.cargo} · {mission.weightKg} kg</Text>
-        <Text style={styles.price}>{mission.budget} €</Text>
+        {mission.category === "VOYAGEURS" ? (
+          <Text style={styles.muted}>{mission.seats} places disponibles</Text>
+        ) : (
+          <Text style={styles.muted}>{mission.cargo} · {mission.weightKg} kg</Text>
+        )}
+        <Text style={styles.price}>{mission.budget} € {mission.category === "VOYAGEURS" ? "/ place" : ""}</Text>
         <Tag label={mission.status} />
       </Card>
 
