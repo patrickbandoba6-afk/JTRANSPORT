@@ -13,6 +13,15 @@
         {
           "cameraPermission": "JTransport a besoin de la caméra pour scanner vos documents et contrats."
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0c1c38",
+          "image": "./assets/splash-1.jpg",
+          "imageWidth": 900,
+          "resizeMode": "cover"
+        }
       ]
     ],
     "experiments": {"typedRoutes": true}
