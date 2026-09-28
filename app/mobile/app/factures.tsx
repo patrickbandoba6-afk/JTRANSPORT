@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { colors } from "../lib/theme";
 import { Button, Card, Tag } from "../components/ui";
 import { useAuth } from "../lib/auth-context";
@@ -67,6 +67,9 @@ export default function Factures() {
               {item.eInvoicingStatus === "FAILED" && (
                 <Text style={styles.muted}>Transmission plateforme agréée : non connectée</Text>
               )}
+              <Link href={`/factures/${item.id}` as never} asChild>
+                <Button title="Voir le détail et payer →" variant="secondary" onPress={() => {}} />
+              </Link>
               {isIssuer && item.status !== "PAID" && (
                 <Button title={busyId === item.id ? "…" : "Marquer payée"} onPress={() => markPaid(item.id)} disabled={busyId === item.id} />
               )}
