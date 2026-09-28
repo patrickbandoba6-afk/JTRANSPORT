@@ -117,6 +117,18 @@ export type CustomsCase = {
   estimatedFees: number | null;
 };
 
+export type ShipmentVehicle = {
+  id: string;
+  shipmentId: string;
+  make: string;
+  model: string;
+  year: number | null;
+  vin: string | null;
+  plate: string | null;
+  condition: string | null;
+  valueDeclared: number | null;
+};
+
 export type Shipment = {
   id: string;
   ownerId: string;
@@ -126,10 +138,13 @@ export type Shipment = {
   destinationCountry: string;
   recipientName: string;
   recipientAddress: string;
+  mode: "ROUTIER" | "MARITIME" | "AERIEN" | "FERROVIAIRE" | "MULTIMODAL";
+  cargoType: "COLIS" | "MARCHANDISE" | "VEHICULE" | "CONTENEUR";
   status: string;
   containerId: string | null;
   createdAt: string;
   parcels?: Parcel[];
+  vehicles?: ShipmentVehicle[];
   container?: ShipmentContainer | null;
   customsCase?: CustomsCase | null;
   events?: TrackingEvent[];
