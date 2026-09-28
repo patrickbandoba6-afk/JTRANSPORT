@@ -6,7 +6,15 @@
     "scheme": "jtransport",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "JTransport a besoin de la caméra pour scanner vos documents et contrats."
+        }
+      ]
+    ],
     "experiments": {"typedRoutes": true}
   }
 }
