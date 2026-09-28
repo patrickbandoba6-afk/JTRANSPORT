@@ -47,7 +47,9 @@ export default function Missions() {
             <Card>
               <Tag label={item.vehicleType} />
               <Text style={styles.route}>{item.fromCity} → {item.toCity}</Text>
-              <Text style={styles.muted}>{item.cargo} · {item.weightKg} kg</Text>
+              <Text style={styles.muted}>
+                {item.category === "VOYAGEURS" ? `${item.seats} places` : `${item.cargo} · ${item.weightKg} kg`}
+              </Text>
               <Text style={styles.price}>{item.budget} €</Text>
             </Card>
           </Link>
