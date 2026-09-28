@@ -271,7 +271,7 @@ export type DocumentRecord = {
 
 // The phone can't reach "localhost" (that would be the phone itself), so
 // this must be the computer's LAN IP while running through Expo Go in dev.
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.20:4000";
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://172.20.10.9:4000";
 
 const TOKEN_KEY = "jt_token";
 

@@ -165,7 +165,7 @@ export default function Home() {
       <View style={styles.categoryGrid}>
         {CATEGORIES.map((c) =>
           c.href ? (
-            <Link key={c.label} href={c.href} asChild>
+            <Link key={c.label} href={c.href as never} asChild>
               <Pressable style={styles.categoryTile}>
                 <Ionicons name={c.icon} size={26} color={colors.blue600} />
                 <Text style={styles.categoryLabel}>{c.label}</Text>
@@ -187,7 +187,7 @@ export default function Home() {
       <View style={styles.servicesWrap}>
         {SERVICES.map((s) =>
           s.href ? (
-            <Link key={s.label} href={s.href} asChild>
+            <Link key={s.label} href={s.href as never} asChild>
               <Pressable style={styles.serviceTile}>
                 <View style={styles.serviceIcon}>
                   <Ionicons name={s.icon} size={18} color={colors.blue600} />
