@@ -158,6 +158,20 @@ export default function ContratDetail() {
             </View>
           </View>
         ))}
+        <View style={{ height: 10 }} />
+        <Button
+          title={scanning ? "Envoi du scan…" : "📷 Scanner le contrat"}
+          variant="secondary"
+          onPress={scanContract}
+          disabled={scanning}
+        />
+        <View style={{ height: 8 }} />
+        <Button
+          title={downloadingPdf ? "Génération…" : "⬇️ Télécharger le contrat (PDF)"}
+          variant="secondary"
+          onPress={downloadPdf}
+          disabled={downloadingPdf}
+        />
       </Card>
 
       {alreadySigned && (
