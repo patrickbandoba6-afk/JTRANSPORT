@@ -83,6 +83,9 @@ export type IncidentStatus = (typeof INCIDENT_STATUSES)[number];
 export const CUSTODIAN_TYPES = ["ORGANIZATION", "CARRIER", "DRIVER", "RECIPIENT"] as const;
 export type CustodianType = (typeof CUSTODIAN_TYPES)[number];
 
+export const MISSION_CATEGORIES = ["MARCHANDISES", "VOYAGEURS"] as const;
+export type MissionCategory = (typeof MISSION_CATEGORIES)[number];
+
 export const MISSION_STATUSES = [
   "PUBLISHED",
   "ATTRIBUTED",

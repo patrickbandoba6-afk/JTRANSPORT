@@ -54,11 +54,15 @@ model Mission {
   id          String   @id @default(cuid())
   ownerId     String
   owner       User     @relation("MissionOwner", fields: [ownerId], references: [id])
+  // MARCHANDISES uses cargo/weightKg; VOYAGEURS uses seats instead — see
+  // the category-specific validation in src/routes/missions.routes.ts.
+  category    String   @default("MARCHANDISES") // MARCHANDISES | VOYAGEURS
   fromCity    String
   toCity      String
   date        DateTime
-  cargo       String
-  weightKg    Float
+  cargo       String?
+  weightKg    Float?
+  seats       Int?
   vehicleType String
   budget      Float
   recurring   Boolean  @default(false)
