@@ -3,19 +3,31 @@ import { z } from "zod";
 import { prisma } from "../db.js";
 import { asyncHandler, ApiError } from "../middleware/error.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
+import { MISSION_CATEGORIES } from "../domain.js";
 
 export const missionsRouter = Router();
 
-const createMissionSchema = z.object({
-  fromCity: z.string().min(1),
-  toCity: z.string().min(1),
-  date: z.coerce.date(),
-  cargo: z.string().min(1),
-  weightKg: z.coerce.number().positive(),
-  vehicleType: z.string().min(1),
-  budget: z.coerce.number().positive(),
-  recurring: z.boolean().optional().default(false),
-});
+const createMissionSchema = z
+  .object({
+    category: z.enum(MISSION_CATEGORIES).optional().default("MARCHANDISES"),
+    fromCity: z.string().min(1),
+    toCity: z.string().min(1),
+    date: z.coerce.date(),
+    cargo: z.string().min(1).optional(),
+    weightKg: z.coerce.number().positive().optional(),
+    seats: z.coerce.number().int().positive().optional(),
+    vehicleType: z.string().min(1),
+    budget: z.coerce.number().positive(),
+    recurring: z.boolean().optional().default(false),
+  })
+  .refine((b) => b.category !== "MARCHANDISES" || (b.cargo && b.weightKg != null), {
+    message: "cargo et weightKg sont requis pour une mission de type marchandises.",
+    path: ["cargo"],
+  })
+  .refine((b) => b.category !== "VOYAGEURS" || b.seats != null, {
+    message: "seats est requis pour une mission de type voyageurs.",
+    path: ["seats"],
+  });
 
 const createOfferSchema = z.object({
   price: z.coerce.number().positive(),
@@ -26,6 +38,7 @@ const searchQuerySchema = z.object({
   fromCity: z.string().optional(),
   toCity: z.string().optional(),
   vehicleType: z.string().optional(),
+  category: z.enum(MISSION_CATEGORIES).optional(),
   status: z.string().optional(),
   mine: z.coerce.boolean().optional(),
 });
@@ -56,6 +69,7 @@ missionsRouter.get(
         ...(query.fromCity ? { fromCity: { contains: query.fromCity } } : {}),
         ...(query.toCity ? { toCity: { contains: query.toCity } } : {}),
         ...(query.vehicleType ? { vehicleType: query.vehicleType } : {}),
+        ...(query.category ? { category: query.category } : {}),
       },
       orderBy: { createdAt: "desc" },
       include: { _count: { select: { offers: true } } },
