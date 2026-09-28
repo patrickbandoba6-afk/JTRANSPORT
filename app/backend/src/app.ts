@@ -16,6 +16,8 @@ import { invoicesRouter } from "./routes/invoices.routes.js";
 import { conversationsRouter } from "./routes/conversations.routes.js";
 import { roundsRouter } from "./routes/rounds.routes.js";
 import { parcelsRouter } from "./routes/parcels.routes.js";
+import { paymentsRouter } from "./routes/payments.routes.js";
+import { disputesRouter } from "./routes/disputes.routes.js";
 
 export function createApp() {
   const app = express();
@@ -46,6 +48,8 @@ export function createApp() {
   app.use("/api/conversations", conversationsRouter);
   app.use("/api/rounds", roundsRouter);
   app.use("/api/parcels", parcelsRouter);
+  app.use("/api/payments", paymentsRouter);
+  app.use("/api/disputes", disputesRouter);
 
   app.use(errorHandler);
 
