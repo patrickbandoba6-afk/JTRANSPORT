@@ -118,7 +118,7 @@ shipmentsRouter.get(
   asyncHandler(async (req, res) => {
     const shipments = await prisma.shipment.findMany({
       where: { ownerId: req.user!.id },
-      include: { parcels: true, container: true, _count: { select: { events: true } } },
+      include: { parcels: true, vehicles: true, container: true, customsCase: true, _count: { select: { events: true } } },
       orderBy: { createdAt: "desc" },
     });
     res.json({ shipments });
