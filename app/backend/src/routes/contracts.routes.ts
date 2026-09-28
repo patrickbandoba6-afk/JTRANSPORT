@@ -78,8 +78,9 @@ contractsRouter.post(
 
     // Capacity flow — the requester proposes a contract directly to the
     // organization that published the capacity, at a negotiated price.
+    const capBody = body as z.infer<typeof fromCapacitySchema>;
     const capacity = await prisma.transportCapacity.findUnique({
-      where: { id: body.capacityId },
+      where: { id: capBody.capacityId },
       include: { organization: true },
     });
     if (!capacity) throw new ApiError(404, "CAPACITY_NOT_FOUND");
@@ -94,9 +95,9 @@ contractsRouter.post(
         organizationId: capacity.organizationId,
         ownerId: req.user!.id,
         counterpartyId: capacity.organization.ownerId,
-        type: body.type,
-        price: body.price,
-        terms: body.terms,
+        type: capBody.type,
+        price: capBody.price,
+        terms: capBody.terms,
         status: "SENT",
       },
     });
