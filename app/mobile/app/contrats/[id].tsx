@@ -21,6 +21,8 @@ export default function ContratDetail() {
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -60,6 +62,57 @@ export default function ContratDetail() {
       setError("Signature impossible (contrat déjà signé de votre part ?).");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function scanContract() {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      setError("Autorisez l'accès à la caméra pour scanner le contrat.");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7, base64: false });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    setScanning(true);
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append("dossierType", "CONTRACT");
+      form.append("dossierId", id);
+      form.append("type", "CONTRAT");
+      form.append("file", {
+        uri: asset.uri,
+        name: `scan-contrat-${Date.now()}.jpg`,
+        type: "image/jpeg",
+      } as unknown as Blob);
+
+      await apiUpload(`/api/documents`, form);
+      await load();
+    } catch {
+      setError("Impossible d'envoyer le scan du contrat.");
+    } finally {
+      setScanning(false);
+    }
+  }
+
+  async function downloadPdf() {
+    setDownloadingPdf(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const dest = `${FileSystem.cacheDirectory}contrat-${id}.pdf`;
+      const result = await FileSystem.downloadAsync(`${API_URL}/api/contracts/${id}/pdf`, dest, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(result.uri, { mimeType: "application/pdf" });
+      }
+    } catch {
+      setError("Impossible de générer le PDF du contrat.");
+    } finally {
+      setDownloadingPdf(false);
     }
   }
 
