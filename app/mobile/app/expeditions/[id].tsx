@@ -43,6 +43,11 @@ export default function ExpeditionDetail() {
         {shipment.parcels?.map((p) => (
           <Text key={p.id} style={styles.muted}>📦 {p.description} · {p.weightKg} kg</Text>
         ))}
+        {shipment.vehicles?.map((v) => (
+          <Text key={v.id} style={styles.muted}>
+            🚗 {v.make} {v.model}{v.year ? ` (${v.year})` : ""}{v.plate ? ` · ${v.plate}` : ""}
+          </Text>
+        ))}
       </Card>
 
       {shipment.container && (
