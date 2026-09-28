@@ -11,22 +11,37 @@ import { useRoleContent, QuickActionsGrid, ProfessionnelPanel, TransporteurPanel
 const LOGO = require("../../assets/logo.png");
 
 // Structure et libellés repris du menu principal de référence (cahier des
-// charges §3). href null = module pas encore construit : la tuile reste
-// visible pour respecter la structure, mais marquée "Bientôt" plutôt que
-// de faire semblant de fonctionner.
-type Href = "/(tabs)/missions" | "/capacites" | "/expeditions" | "/contrats" | "/factures" | null;
+// charges §3). Toutes les catégories et services sont désormais reliés à
+// un écran fonctionnel — plus aucune tuile "Bientôt".
+type Href =
+  | "/(tabs)/missions"
+  | "/capacites"
+  | "/expeditions"
+  | "/contrats"
+  | "/factures"
+  | "/voyageurs"
+  | "/fret/maritime"
+  | "/fret/aerien"
+  | "/fret/ferroviaire"
+  | "/vehicules"
+  | "/douane"
+  | "/import-export"
+  | "/logistique"
+  | "/assurance"
+  | "/litiges"
+  | null;
 
 const CATEGORIES: { icon: keyof typeof Ionicons.glyphMap; label: string; href: Href }[] = [
   { icon: "cube", label: "Transport\nde marchandises", href: "/(tabs)/missions" },
-  { icon: "bus", label: "Transport\nde voyageurs", href: null },
-  { icon: "boat", label: "Fret maritime", href: null },
-  { icon: "airplane", label: "Fret aérien", href: null },
-  { icon: "train", label: "Fret ferroviaire", href: null },
-  { icon: "car-sport", label: "Transport de\nvéhicules", href: null },
+  { icon: "bus", label: "Transport\nde voyageurs", href: "/voyageurs" },
+  { icon: "boat", label: "Fret maritime", href: "/fret/maritime" },
+  { icon: "airplane", label: "Fret aérien", href: "/fret/aerien" },
+  { icon: "train", label: "Fret ferroviaire", href: "/fret/ferroviaire" },
+  { icon: "car-sport", label: "Transport de\nvéhicules", href: "/vehicules" },
   { icon: "file-tray-full", label: "Colis & palettes", href: "/expeditions" },
-  { icon: "shield-checkmark", label: "Douane &\ndédouanement", href: null },
-  { icon: "globe", label: "Import / Export", href: null },
-  { icon: "business", label: "Logistique &\nentreposage", href: null },
+  { icon: "shield-checkmark", label: "Douane &\ndédouanement", href: "/douane" },
+  { icon: "globe", label: "Import / Export", href: "/import-export" },
+  { icon: "business", label: "Logistique &\nentreposage", href: "/logistique" },
   { icon: "bus-outline", label: "Location de\ncapacité", href: "/capacites" },
   { icon: "grid", label: "Toutes\nles catégories", href: "/(tabs)/missions" },
 ];
@@ -35,8 +50,8 @@ const SERVICES: { icon: keyof typeof Ionicons.glyphMap; label: string; sub: stri
   { icon: "cash", label: "Devis & Factures", sub: "Générez vos factures", href: "/factures" },
   { icon: "create", label: "Contrats & Signature", sub: "Signez en ligne", href: "/contrats" },
   { icon: "location", label: "Suivi & Tracking", sub: "Suivez vos marchandises", href: "/expeditions" },
-  { icon: "shield", label: "Assurance Transport", sub: "Protégez vos envois", href: null },
-  { icon: "headset", label: "Gestion des litiges", sub: "En cas de problème", href: null },
+  { icon: "shield", label: "Assurance Transport", sub: "Protégez vos envois", href: "/assurance" },
+  { icon: "headset", label: "Gestion des litiges", sub: "En cas de problème", href: "/litiges" },
 ];
 
 const FREIGHT_MODES: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
