@@ -13,11 +13,13 @@ export type User = {
 export type Mission = {
   id: string;
   ownerId: string;
+  category: "MARCHANDISES" | "VOYAGEURS";
   fromCity: string;
   toCity: string;
   date: string;
-  cargo: string;
-  weightKg: number;
+  cargo: string | null;
+  weightKg: number | null;
+  seats: number | null;
   vehicleType: string;
   budget: number;
   recurring: boolean;
@@ -195,6 +197,50 @@ export type DeliveryRound = {
   status: "PLANNED" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   stops?: RoundStop[];
   driver?: { id: string; name: string } | null;
+};
+
+export type Payment = {
+  id: string;
+  payerId: string;
+  invoiceId: string | null;
+  purpose: string;
+  method: "CARD" | "VIREMENT" | "WALLET";
+  amount: number;
+  currency: string;
+  commissionAmount: number;
+  netAmount: number;
+  status: "PENDING" | "SUCCEEDED" | "FAILED" | "REFUNDED" | "PARTIALLY_REFUNDED";
+  failureReason: string | null;
+  createdAt: string;
+  refunds?: { id: string; amount: number; status: string }[];
+};
+
+export type Wallet = { balance: number; currency: string };
+
+export type Dispute = {
+  id: string;
+  contractId: string;
+  openedById: string;
+  category: "RETARD" | "DOMMAGE" | "COLIS_MANQUANT" | "DOUANE" | "DOCUMENTAIRE" | "PAIEMENT" | "DESACCORD_TARIFAIRE" | "AUTRE";
+  description: string;
+  status: "OPEN" | "UNDER_REVIEW" | "RESOLVED" | "REJECTED" | "CLOSED";
+  resolution: string | null;
+  refundAmount: number | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  contract?: Contract;
+  _count?: { messages: number };
+  messages?: DisputeMessage[];
+};
+
+export type DisputeMessage = {
+  id: string;
+  disputeId: string;
+  authorId: string;
+  body: string;
+  attachmentUrl: string | null;
+  createdAt: string;
+  author?: { id: string; name: string };
 };
 
 export type DocumentRecord = {
