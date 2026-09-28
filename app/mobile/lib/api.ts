@@ -299,3 +299,22 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 
   return body as T;
 }
+
+// Multipart upload (document scan, etc.) — must NOT set Content-Type
+// manually so fetch can add the multipart boundary itself.
+export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  const token = await getToken();
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: form,
+  });
+
+  const body = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new ApiRequestError(res.status, body.error ?? "UNKNOWN_ERROR", body.message);
+  }
+
+  return body as T;
+}
